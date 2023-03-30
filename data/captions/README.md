@@ -1,0 +1,1 @@
+A folder for saving scrapped raw data (CSV) of images paths and captions.
