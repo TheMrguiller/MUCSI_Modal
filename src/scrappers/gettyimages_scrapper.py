@@ -26,7 +26,7 @@ class GettyImagesScrapper(ScrappingUtils):
             proxies = self.get_random_proxy()
             print("Trying with proxies: {}".format(proxies))
             try:
-                response = requests.get(base_url + '?page={0}'.format(i), headers=headers)#, proxies=proxies)
+                response = requests.get(base_url + '?page={0}'.format(i), headers=headers, proxies=proxies)
                 if response.status_code == 200:
                     succes_response = True
             except:
@@ -41,7 +41,7 @@ class GettyImagesScrapper(ScrappingUtils):
             proxies = self.get_random_proxy()
             print("Trying with proxies: {}".format(proxies))
             try:
-                response = requests.get(detail_url, headers=headers)#, proxies=proxies)
+                response = requests.get(detail_url, headers=headers, proxies=proxies)
                 if response.status_code == 200:
                     succes_response = True
             except:
@@ -87,7 +87,6 @@ class GettyImagesScrapper(ScrappingUtils):
                 local_path = self.download_image(img_url)
                 title = img_elem["alt"]
 
-                
                 detail_url_elem = div.find("a", {"class": "wwW2JD5Y0CMfeJ8BD1xP"})
                 if detail_url_elem:
                     # Caption
@@ -117,11 +116,8 @@ class GettyImagesScrapper(ScrappingUtils):
             
             final_results_list = []
             for i in tqdm(range(1, self.num_pages+1)):
-                amazon_response = self.query_request(gettyimagge_base_url, i)
-                results = self.parse_query_html_data(amazon_response)
-                
-                print(len(results), len(results[0]))
-                print(len(final_results_list))
+                response = self.query_request(gettyimagge_base_url, i)
+                results = self.parse_query_html_data_(response)
 
                 if len(final_results_list) == 0:
                     final_results_list = results
