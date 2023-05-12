@@ -42,13 +42,13 @@ class CLIPImageTransform:
         self.vision_processor = CLIPImageProcessor.from_pretrained(clip_model_type) # type: ignore
 
     def __call__(self, image) -> torch.Tensor:
-        return self.vision_processor(images=image, return_tensors="pt", padding=True)['pixel_values']
+        return self.vision_processor(images=image, return_tensors="pt", padding=True)['pixel_values'] #Wrapper que codifica y preapara la imagen. Se encarga de hacer los patches y luego hace un linear
 
         
 def prepare_training_dataset(config: FlamingoConfig):
     """ prepare a CocoCaptions training dataset """
-    transform = T.Compose([
-        T.RandomHorizontalFlip(),                       # add your favorite transforms
+    transform = T.Compose([ #Con cierta probabilidad da la vuelta a la imagen y procesa la imagen con Clip
+        T.RandomHorizontalFlip(),                       
         CLIPImageTransform(config.clip_model_type)
     ])
 
@@ -60,7 +60,7 @@ def prepare_training_dataset(config: FlamingoConfig):
         COCO_ANN_TRAIN, 
         transform=transform,
         target_transform=target_transform
-    )
+    )# Link a la clase de COCO https://github.com/facebookresearch/astmt/blob/master/fblib/dataloaders/coco.py
     
 
 def prepare_evaluation_dataset(config: FlamingoConfig):

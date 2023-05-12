@@ -5,8 +5,8 @@ import requests
 import torch
 from PIL import Image
 from torch import nn
-
-
+import torch.utils.data as data
+from datasets import load_dataset
 def load_url(url: str):
     return Image.open(requests.get(url, stream=True).raw)
 
@@ -56,3 +56,34 @@ def get_common_prefix_length(x: torch.Tensor) -> int:
         return (x[0] == x[1:]).all(dim=0).tolist().index(False)
     except ValueError:
         return x.size(1)
+    
+class BilbaoCaptions(data.Dataset):
+    #Clase parecida al de COCO pero adaptada a nuestro formato
+    def __init__(self, dataset:str,transform=None,target_transform=None):
+        self.dataset = load_dataset(str)
+        
+        self.transform = transform
+        self.target_transform = target_transform
+
+    def __getitem__(self, index):
+        """
+        Args:
+            index (int): Index
+        Returns:
+            tuple: Tuple (image, target). target is a list of captions for the image.
+        """
+        
+        target = [ann['caption'] for ann in self.dataset]
+
+        
+        img = self.dataset["image"[index]]
+        if self.transform is not None:
+            img = self.transform(img)
+
+        if self.target_transform is not None:
+            target = self.target_transform(target)
+
+        return img, target
+
+    def __len__(self):
+        return len(self.dataset)

@@ -24,7 +24,7 @@ class MyDatasetWrapper(Dataset):
 
 
 @torch.no_grad()
-def evaluate_image_captioning(
+def evaluate_image_captioning( #https://github.com/tylin/coco-caption/blob/master/pycocoevalcap/eval.py
     dataset: CocoCaptions,
     model: FlamingoModel, 
     *,
@@ -38,7 +38,7 @@ def evaluate_image_captioning(
 
     processor = FlamingoProcessor(model.config)
     results: List[dict] = []
-    
+
     wrapper = MyDatasetWrapper(dataset)
     wrapper = Subset(wrapper, range(start, end if end is not None else len(wrapper)))
     loader = DataLoader(
