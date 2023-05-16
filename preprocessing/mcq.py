@@ -183,12 +183,11 @@ class MCQ():
                 distractors = distractors[:2]
             
             dictonary[idx]={"answer":answer,"question":ques,"options":distractors}
-            if len(distractors)==2:
+            if len(distractors)>=2:
                 candidate_2_dict[idx]={"answer":answer,"question":ques,"options":distractors}
             elif len(distractors)>0:
                 candidate_1_dict[idx]={"answer":answer,"question":ques,"options":distractors}
-        # print(dictonary)
-        # candidate_1_dict[idx]={"answer":"pepe","question":"question","options":["distr"]}
+        
         if len(candidate_2_dict.keys())>0:
             return candidate_2_dict[random.choice(list(candidate_2_dict.keys()))]
         if len(candidate_1_dict.keys())>0:
@@ -208,7 +207,7 @@ class MCQ():
 
             return return_value
         else:
-            return {"answer":answer,"question":"","options":["",""]}
+            return {"answer":"","question":"","options":["",""]}
             
             
 
