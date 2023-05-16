@@ -45,23 +45,6 @@ class CLIPImageTransform:
         return self.vision_processor(images=image, return_tensors="pt", padding=True)['pixel_values'] #Wrapper que codifica y preapara la imagen. Se encarga de hacer los patches y luego hace un linear
 
         
-def prepare_training_dataset(config: FlamingoConfig):
-    """ prepare a CocoCaptions training dataset """
-    transform = T.Compose([ #Con cierta probabilidad da la vuelta a la imagen y procesa la imagen con Clip
-        T.RandomHorizontalFlip(),                       
-        CLIPImageTransform(config.clip_model_type)
-    ])
-
-    def target_transform(captions):
-        return f"{random.choice(['', ' '])}<image>{random.choice(captions)}<EOC></s>"
-
-    return CocoCaptions(
-        COCO_ROOT, 
-        COCO_ANN_TRAIN, 
-        transform=transform,
-        target_transform=target_transform
-    )# Link a la clase de COCO https://github.com/facebookresearch/astmt/blob/master/fblib/dataloaders/coco.py
-
 def prepare_training_dataset_Bilbao(config: FlamingoConfig,dataset_path:str):
     """ prepare a CocoCaptions training dataset """
     transform = T.Compose([ #Con cierta probabilidad da la vuelta a la imagen y procesa la imagen con Clip
@@ -70,7 +53,7 @@ def prepare_training_dataset_Bilbao(config: FlamingoConfig,dataset_path:str):
     ])
 
     def target_transform(captions):
-        return f"{random.choice(['', ' '])}<image>{random.choice(captions)}<EOC></s>"
+        return f"{random.choice(['', ' '])}<image>{captions}<EOC></s>"
 
     return BilbaoCaptions(
         dataset=dataset_path,
