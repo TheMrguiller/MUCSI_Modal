@@ -56,7 +56,7 @@ class GettyImagesScrapper(ScrappingUtils):
             return caption_div_elem.contents
     
     def download_image(self, url):
-        path = "data/imgs/"
+        path = "data/imgs/gettyimages/"
         ppid = os.getpid()
         timestamp = datetime.now().timestamp()
         response = requests.get(url)
@@ -81,13 +81,13 @@ class GettyImagesScrapper(ScrappingUtils):
             caption = None
 
             # URL
-            img_elem = div.find("img", {"class": "yvFP5yDnHgdkSkBpoY3V"})
+            img_elem = div.find("img", {"class": "BLA_wBUJrga_SkfJ8won"})
             if img_elem:
                 img_url = img_elem["src"]
                 local_path = self.download_image(img_url)
                 title = img_elem["alt"]
 
-                detail_url_elem = div.find("a", {"class": "wwW2JD5Y0CMfeJ8BD1xP"})
+                detail_url_elem = div.find("a", {"class": "TV1lZmIBFh_LgfiQqK1O"})
                 if detail_url_elem:
                     # Caption
                     detail_url = 'https://www.gettyimages.es' + detail_url_elem['href']
@@ -117,7 +117,7 @@ class GettyImagesScrapper(ScrappingUtils):
             final_results_list = []
             for i in tqdm(range(1, self.num_pages+1)):
                 response = self.query_request(gettyimagge_base_url, i)
-                results = self.parse_query_html_data_(response)
+                results = self.parse_query_html_data(response)
 
                 if len(final_results_list) == 0:
                     final_results_list = results

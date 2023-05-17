@@ -129,8 +129,9 @@ dmypy.json
 .pyre/
 
 # Images
-data/imgs/*.jpg
-data/imgs/*.jpeg
-data/imgs/*.png
-data/imgs/*.svg
+data/imgs/*/*.jpg
+data/imgs/*/*.jpeg
+data/imgs/*/*.png
+data/imgs/*/*.svg
 
+datasets/*
