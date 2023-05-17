@@ -1,10 +1,10 @@
 #!/bin/env bash
 
-export CUDA_VISIBLE_DEVICES=2,3
-NUM_GPU=2
+#export CUDA_VISIBLE_DEVICES=2,3
+NUM_GPU=1
 
 ARGS="
---output_dir ./flamingo-coco
+--output_dir ./flamingo-Bilbao
 --run_name flamingo-tiny-vitL
 --do_train --do_eval
 --optim adamw_torch

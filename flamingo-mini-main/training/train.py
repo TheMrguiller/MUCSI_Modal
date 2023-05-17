@@ -109,9 +109,8 @@ class FlamingoTrainer(Trainer):
         TODO this only runs on one GPU, how to do distributed evaluation?
         """
         metrics = evaluate_image_captioning(self.eval_dataset, self.model, 
-            prefix=self.args.eval_coco_captioning_prefix,
+            prefix="",
             start=self.args.eval_coco_captioning_start,
-            end=self.args.eval_coco_captioning_end,
             batch_size=self.args.per_device_eval_batch_size,
             num_workers=self.args.dataloader_num_workers
         )
@@ -132,10 +131,10 @@ if __name__ == '__main__':
     logging.basicConfig(
         format=f'%(asctime)s {training_args.run_name} %(message)s', 
         datefmt='%H:%M:%S',
-        force=True,
+        #force=True,
         level=logging.INFO,
         handlers=[
-            logging.StreamHandler(),
+            logging.StreamHandler()
             # logging.FileHandler(f'{args.output_dir}/out.log')
         ]    
     )
@@ -158,6 +157,7 @@ if __name__ == '__main__':
     # model = FlamingoModel(config)
     model = FlamingoModel.from_pretrained('dhansmair/flamingo-tiny')
     config=model.config
+    print(f"MOdel config:{config}")
     model.train()
 
     #################################################################
@@ -187,7 +187,7 @@ if __name__ == '__main__':
     # training loop
     #################################################################
     logger.info('start training.')
-
+    trainer.evaluate(eval_dataset)
     if training_args.resume_from_checkpoint is not None:
         trainer.train(training_args.resume_from_checkpoint)
     else:

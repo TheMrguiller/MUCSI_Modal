@@ -73,10 +73,10 @@ class BilbaoCaptions(data.Dataset):
             tuple: Tuple (image, target). target is a list of captions for the image.
         """
         
-        target = [ann['caption'] for ann in self.dataset]
+        target = self.dataset["caption"][index]
 
         
-        img = self.dataset["image"[index]]
+        img = self.dataset["image"][index]
         if self.transform is not None:
             img = self.transform(img)
 
@@ -84,6 +84,7 @@ class BilbaoCaptions(data.Dataset):
             target = self.target_transform(target)
 
         return img, target
-
+    def __getcaption__(self,index):
+        return self.dataset["caption"][index]
     def __len__(self):
         return len(self.dataset)

@@ -4,7 +4,7 @@ from tqdm import tqdm
 import torch
 from torch.utils.data import Dataset, Subset, DataLoader
 from torchvision.datasets import CocoCaptions
-from pycocoevalcap.eval import COCOEvalCap
+# from pycocoevalcap.eval import COCOEvalCap
 from flamingo_mini.utils import BilbaoCaptions
 from flamingo_mini import FlamingoModel, FlamingoProcessor
 import evaluate
