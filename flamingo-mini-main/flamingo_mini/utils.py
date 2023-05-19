@@ -71,6 +71,14 @@ class BilbaoCaptions(data.Dataset):
         self.dataset=concatenate_datasets(lista_datasets)
         self.transform = transform
         self.target_transform = target_transform
+        self.new_size = (224, 224)
+        self._resize_images(self.new_size)
+
+    def _resize_images(self, new_size):
+        for data_point in self.dataset:
+            image = data_point['image']            
+            resized_image = image.resize(new_size)
+            data_point['image'] = resized_image
 
     def __getitem__(self, index):
         """
