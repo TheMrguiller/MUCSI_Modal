@@ -158,6 +158,10 @@ if __name__ == '__main__':
     model = FlamingoModel.from_pretrained('dhansmair/flamingo-tiny')
     config=model.config
     print(f"MOdel config:{config}")
+    device=device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+    print("%%%%%%%%%%%%%%%%%%%%%%")
+    print(model.device)
     model.train()
 
     #################################################################

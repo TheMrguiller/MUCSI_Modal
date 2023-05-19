@@ -8,7 +8,8 @@ from torch import nn
 import torch.utils.data as data
 from datasets import load_dataset,concatenate_datasets
 from typing import List
-
+from tqdm import tqdm
+import numpy as np
 def load_url(url: str):
     return Image.open(requests.get(url, stream=True).raw)
 
@@ -73,9 +74,10 @@ class BilbaoCaptions(data.Dataset):
         self.target_transform = target_transform
         self.new_size = (224, 224)
         self._resize_images(self.new_size)
-
+        self.dataset=self.dataset.shuffle(seed=42)
+        self.images= np.array([ image for image in tqdm(self.dataset["image"])],dtype=object)
     def _resize_images(self, new_size):
-        for data_point in self.dataset:
+        for data_point in tqdm(self.dataset):
             image = data_point['image']            
             resized_image = image.resize(new_size)
             data_point['image'] = resized_image
@@ -91,7 +93,8 @@ class BilbaoCaptions(data.Dataset):
         target = self.dataset["caption"][index]
 
         
-        img = self.dataset["image"][index]
+        # img = self.dataset["image"][index]
+        img = self.images[index]
         if self.transform is not None:
             img = self.transform(img)
 

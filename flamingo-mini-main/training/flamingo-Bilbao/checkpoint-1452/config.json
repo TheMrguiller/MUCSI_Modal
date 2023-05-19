@@ -1,0 +1,26 @@
+{
+  "_name_or_path": "dhansmair/flamingo-tiny",
+  "architectures": [
+    "FlamingoModel"
+  ],
+  "clip_model_type": "openai/clip-vit-large-patch14",
+  "dim": 768,
+  "dim_visual": 1024,
+  "freeze_language_model": true,
+  "freeze_vision_model": true,
+  "lm": "facebook/opt-125m",
+  "resampler_act": "sqrelu",
+  "resampler_depth": 6,
+  "resampler_dim_head": 64,
+  "resampler_ff_mult": 4,
+  "resampler_heads": 8,
+  "resampler_num_latents": 64,
+  "resampler_num_time_embeds": 4,
+  "torch_dtype": "float32",
+  "transformers_version": "4.29.2",
+  "xattn_act": "sqrelu",
+  "xattn_dim_head": 64,
+  "xattn_every": 1,
+  "xattn_ff_mult": 4,
+  "xattn_heads": 8
+}

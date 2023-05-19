@@ -20,6 +20,7 @@ class MyDatasetWrapper(Dataset):
     def __getitem__(self, index):
         image, _ = self.dataset[index]
         image_id = index
+        # print(image.shape)
         # print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
         # print(image_id)
         return image_id, image
@@ -76,46 +77,47 @@ def evaluate_image_captioning( #https://github.com/tylin/coco-caption/blob/maste
 ) -> Dict[str, float]:
 
     processor = FlamingoProcessor(model.config)
-    captions = []
+    captions_ = []
     ref_captions =[]
     wrapper = MyDatasetWrapper(dataset)
     
     wrapper = Subset(wrapper, range(start, end if end is not None else len(wrapper)))
     kwargs = {'num_workers': 1, 'pin_memory': True} 
-    train_loader = torch.utils.data.DataLoader(wrapper, batch_size=batch_size,shuffle=False,drop_last=False, **kwargs)
+    device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    # train_loader = torch.utils.data.DataLoader(wrapper, batch_size=batch_size,shuffle=False,drop_last=False, **kwargs)
     print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
     # print(train_loader.device)
-    # loader = DataLoader(
-    #     wrapper, batch_size=batch_size, shuffle=False, drop_last=False, pin_memory=True,
-    #     num_workers=num_workers)
+    loader = DataLoader(
+        wrapper, batch_size=batch_size, shuffle=False, drop_last=False, pin_memory=True,
+        num_workers=num_workers, persistent_workers=True)
     
     # print(loader.dataset[0])
-    for image_ids, pixels in tqdm(train_loader):
-        print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
-        print("Entrando putos")
+    for image_ids, pixels in tqdm(loader):
+        print(len(image_ids),len(pixels))
         captions = model.generate_captions(
             processor, 
             pixel_values=pixels.to(model.device),
-            prompt=prefix
+            prompt=prefix,
+            device=device
         )
-        print(captions)
-        print(dataset.__getcaption__(image_ids))
-        captions.append(captions)
-        ref_captions.append(dataset.__getcaption__(image_ids))
-        # for image_id, caption in zip(image_ids.tolist(), captions):
-        #     captions.append(caption)
-        #     ref_captions.append(dataset.__getcaption__(image_id))
-        if image_ids >0:
-            break
+        # print(captions)
+        # print(dataset.__getcaption__(image_ids))
+        # captions.append(captions)
+        # ref_captions.append(dataset.__getcaption__(image_ids))
+        for image_id, caption in zip(image_ids.tolist(), captions):
+            captions_.append(caption)
+            ref_captions.append(dataset.__getcaption__(image_id))
+        # if image_ids >0:
+        #     break
             
     
     #Evaluate based in meteor,rouge.Novel metrics cider y spider
     bleu_metric = evaluate.load("bleu")
-    bleu_result = bleu_metric.compute(predictions=captions, references=ref_captions)
+    bleu_result = bleu_metric.compute(predictions=captions_, references=ref_captions)
     meteor_metric = evaluate.load('meteor')
-    meteor_result=meteor_metric.compute(predictions=captions, references=ref_captions)
+    meteor_result=meteor_metric.compute(predictions=captions_, references=ref_captions)
     rougue_metric=evaluate.load('rouge')
-    rouge_result=rougue_metric.compute(predictions=captions, references=ref_captions)
+    rouge_result=rougue_metric.compute(predictions=captions_, references=ref_captions)
     # coco_result = dataset.coco.loadRes(results)
     # coco_eval = COCOEvalCap(dataset.coco, coco_result)
     # coco_eval.params['image_id'] = coco_result.getImgIds()
