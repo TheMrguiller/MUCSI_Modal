@@ -98,7 +98,7 @@ class FlamingoTrainer(Trainer):
     args: FlamingoTrainingArguments
     model: FlamingoModel
     processor: FlamingoProcessor
-    eval_dataset: CocoCaptions
+    eval_dataset: BilbaoCaptions
     
     def evaluate(self,
         eval_dataset: Optional[Dataset] = None,
