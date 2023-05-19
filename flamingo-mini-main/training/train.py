@@ -45,7 +45,7 @@ class CLIPImageTransform:
         return self.vision_processor(images=image, return_tensors="pt", padding=True)['pixel_values'] #Wrapper que codifica y preapara la imagen. Se encarga de hacer los patches y luego hace un linear
 
         
-def prepare_training_dataset_Bilbao(config: FlamingoConfig,dataset_path:str):
+def prepare_training_dataset_Bilbao(config: FlamingoConfig,dataset_path:List[str]):
     """ prepare a CocoCaptions training dataset """
     transform = T.Compose([ #Con cierta probabilidad da la vuelta a la imagen y procesa la imagen con Clip
         T.RandomHorizontalFlip(),                       
@@ -63,7 +63,7 @@ def prepare_training_dataset_Bilbao(config: FlamingoConfig,dataset_path:str):
     )# Link a la clase de COCO https://github.com/facebookresearch/astmt/blob/master/fblib/dataloaders/coco.py
        
 
-def prepare_evaluation_dataset_Bilbao(config: FlamingoConfig,dataset_path:str):
+def prepare_evaluation_dataset_Bilbao(config: FlamingoConfig,dataset_path:List[str]):
     return BilbaoCaptions(dataset=dataset_path, 
         transform=CLIPImageTransform(config.clip_model_type),
         split_name="test")
@@ -163,7 +163,7 @@ if __name__ == '__main__':
     #################################################################
     # datasets
     #################################################################
-    path = "TheMrguiller/BilbaoCaptions"
+    path = ["TheMrguiller/BilbaoCaptions","landersanmi/BilbaoCaptions2"]
     logger.info('loading datasets...')
     train_dataset = prepare_training_dataset_Bilbao(config,path)
     eval_dataset = prepare_evaluation_dataset_Bilbao(config,path)
