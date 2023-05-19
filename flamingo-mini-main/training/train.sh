@@ -19,7 +19,7 @@ ARGS="
 --save_strategy epoch
 --save_total_limit 2
 --log_level info
---dataloader_num_workers 40
+--dataloader_num_workers 8
 --dataloader_pin_memory True
 --fp16
 --report_to wandb

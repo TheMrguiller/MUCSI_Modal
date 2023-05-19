@@ -6,7 +6,9 @@ import torch
 from PIL import Image
 from torch import nn
 import torch.utils.data as data
-from datasets import load_dataset
+from datasets import load_dataset,concatenate_datasets
+from typing import List
+
 def load_url(url: str):
     return Image.open(requests.get(url, stream=True).raw)
 
@@ -59,9 +61,14 @@ def get_common_prefix_length(x: torch.Tensor) -> int:
     
 class BilbaoCaptions(data.Dataset):
     #Clase parecida al de COCO pero adaptada a nuestro formato
-    def __init__(self, dataset:str,split_name:str,transform=None,target_transform=None):
-        self.dataset = load_dataset(dataset,split=split_name)
-        
+    def __init__(self, dataset:List[str],split_name:str,transform=None,target_transform=None):
+        lista_datasets=[]
+        for idx,path in enumerate(dataset):
+            lista_datasets.append(load_dataset(path,split=split_name))
+            if idx >0:
+                assert lista_datasets[idx-1].features.type == lista_datasets[idx].features.type
+          
+        self.dataset=concatenate_datasets(lista_datasets)
         self.transform = transform
         self.target_transform = target_transform
 
@@ -82,7 +89,7 @@ class BilbaoCaptions(data.Dataset):
 
         if self.target_transform is not None:
             target = self.target_transform(target)
-
+        
         return img, target
     def __getcaption__(self,index):
         return self.dataset["caption"][index]

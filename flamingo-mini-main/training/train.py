@@ -115,7 +115,7 @@ class FlamingoTrainer(Trainer):
             num_workers=self.args.dataloader_num_workers
         )
         metrics = {f"{metric_key_prefix}_{k}" : v for k, v in metrics.items()}
-
+        print(metrics)
         # HF trainer stuff from overridden method
         self.log(metrics)
         self.control = self.callback_handler.on_evaluate(self.args, self.state, self.control, metrics)
@@ -188,6 +188,7 @@ if __name__ == '__main__':
     #################################################################
     logger.info('start training.')
     trainer.evaluate(eval_dataset)
+    
     if training_args.resume_from_checkpoint is not None:
         trainer.train(training_args.resume_from_checkpoint)
     else:
