@@ -135,3 +135,5 @@ data/imgs/*/*.png
 data/imgs/*/*.svg
 
 datasets/*
+flamingo-megatiny/training/nfs/*
+flamingo-megatiny/training/flamingo-coco/*
