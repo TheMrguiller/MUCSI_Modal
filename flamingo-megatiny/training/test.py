@@ -6,12 +6,12 @@ from datasets import load_dataset
 from PIL import Image
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-model = FlamingoModel.from_pretrained('flamingo-coco/checkpoint-22179')
-#model = FlamingoModel.from_pretrained('TheMrguiller/Flamingo-tiny-Bilbao_Captions')
+#model = FlamingoModel.from_pretrained('flamingo-coco/checkpoint-22179')
+model = FlamingoModel.from_pretrained('landersanmi/flamingo-megatiny')
 model.to(device)
 model.eval()
 processor = FlamingoProcessor(model.config)
-model.push_to_hub("landersanmi/flamingo-megatiny")
+#model.push_to_hub("landersanmi/flamingo-megatiny")
 
 dataset=load_dataset("landersanmi/BilbaoCaptions2",)
 
