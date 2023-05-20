@@ -85,7 +85,7 @@ def evaluate_image_captioning( #https://github.com/tylin/coco-caption/blob/maste
     kwargs = {'num_workers': 1, 'pin_memory': True} 
     device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     # train_loader = torch.utils.data.DataLoader(wrapper, batch_size=batch_size,shuffle=False,drop_last=False, **kwargs)
-    print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
+    
     # print(train_loader.device)
     loader = DataLoader(
         wrapper, batch_size=batch_size, shuffle=False, drop_last=False, pin_memory=True,
@@ -123,6 +123,6 @@ def evaluate_image_captioning( #https://github.com/tylin/coco-caption/blob/maste
     # coco_eval.params['image_id'] = coco_result.getImgIds()
     # coco_eval.evaluate()
     result = {"Bleu":bleu_result["bleu"],"Meteor":meteor_result["meteor"],"Rouge":rouge_result["rougeL"]}
-    print(result)
+    
     return result
 

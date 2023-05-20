@@ -108,6 +108,21 @@ class FlamingoTrainer(Trainer):
         """ override evaluation method to inject custom behavior. 
         TODO this only runs on one GPU, how to do distributed evaluation?
         """
+        self._memory_tracker.start()
+
+        eval_dataloader = self.get_eval_dataloader(eval_dataset)
+        # start_time = time.time()
+
+        eval_loop = self.prediction_loop if self.args.use_legacy_prediction_loop else self.evaluation_loop
+        output = eval_loop(
+            eval_dataloader,
+            description="Evaluation",
+            # No point gathering the predictions if there are no metrics, otherwise we defer to
+            # self.args.prediction_loss_only
+            prediction_loss_only=True if self.compute_metrics is None else None,
+            ignore_keys=ignore_keys,
+            metric_key_prefix=metric_key_prefix,
+        )
         metrics = evaluate_image_captioning(self.eval_dataset, self.model, 
             prefix="",
             start=self.args.eval_coco_captioning_start,
@@ -115,13 +130,23 @@ class FlamingoTrainer(Trainer):
             num_workers=self.args.dataloader_num_workers
         )
         metrics = {f"{metric_key_prefix}_{k}" : v for k, v in metrics.items()}
-        print(metrics)
+        metrics["eval_loss"] =output.metrics["eval_loss"]
         # HF trainer stuff from overridden method
         self.log(metrics)
         self.control = self.callback_handler.on_evaluate(self.args, self.state, self.control, metrics)
         self._memory_tracker.stop_and_update_metrics(metrics)
+        
         return metrics
+# def compute_metrics(eval_pred):
+#     logits,labels=eval_pred
+#     processor = FlamingoProcessor(model.config)
+#     captions = processor.tokenizer.batch_decode(
+#             logits, skip_special_tokens=True)
+#     captions = [processor.remove_tags(t) for t in captions]
+#     print(captions)
     
+#     return {}
+
     
 if __name__ == '__main__':
     parser = HfArgumentParser(FlamingoTrainingArguments)
@@ -184,6 +209,7 @@ if __name__ == '__main__':
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         data_collator=DataCollator(config),
+        #compute_metrics=compute_metrics,
         # optimizers=(optimizer, scheduler)
     )
 
