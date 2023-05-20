@@ -29,9 +29,9 @@ logger = logging.getLogger(__name__)
 
 
 # get images and annotations from https://cocodataset.org/#download
-COCO_ROOT      = '/nfs/data3/zhangya/coco2017/images'
-COCO_ANN_TRAIN = '/nfs/data3/hansmair/coco2017/captions_train2017.json'
-COCO_ANN_VAL   = '/nfs/data3/hansmair/coco2017/captions_val2017.json'
+COCO_ROOT      = 'nfs/data3/zhangya/coco2017/images'
+COCO_ANN_TRAIN = 'nfs/data3/hansmair/coco2017/captions_train2017.json'
+COCO_ANN_VAL   = 'nfs/data3/hansmair/coco2017/captions_val2017.json'
 
 
 class CLIPImageTransform:
@@ -61,6 +61,11 @@ def prepare_training_dataset(config: FlamingoConfig):
         transform=transform,
         target_transform=target_transform
     )# Link a la clase de COCO https://github.com/facebookresearch/astmt/blob/master/fblib/dataloaders/coco.py
+
+def prepare_evaluation_dataset(config: FlamingoConfig):
+    return CocoCaptions(COCO_ROOT, COCO_ANN_VAL, 
+        transform=CLIPImageTransform(config.clip_model_type))
+
 
 def prepare_training_dataset_Bilbao(config: FlamingoConfig,dataset_path:str):
     """ prepare a CocoCaptions training dataset """
@@ -164,17 +169,22 @@ if __name__ == '__main__':
     logger.info(str(training_args))
 
     logger.info('loading model...')
-    # config = FlamingoConfig(
-    #     clip_model_type='openai/clip-vit-large-patch14',
-    #     lm='facebook/opt-125m',
-    #     dim=768,
-    #     dim_visual=1024,
-    #     xattn_act='sqrelu',
-    #     resampler_act='sqrelu'
-    # )
-    # model = FlamingoModel(config)
-    model = FlamingoModel.from_pretrained('dhansmair/flamingo-tiny')
-    config=model.config
+    config = FlamingoConfig(
+        xattn_act='sqrelu',
+        resampler_act='sqrelu'
+    )
+    
+    ## Pretained model
+    #model = FlamingoModel.from_pretrained('dhansmair/flamingo-tiny')
+    #config=model.config
+    #print(f"MOdel config:{config}")
+    #print(model.device)
+
+    model = FlamingoModel(config) # Learning from scratch
+
+    device=device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+    print(model.device)
     model.train()
 
     #################################################################
@@ -182,9 +192,8 @@ if __name__ == '__main__':
     #################################################################
     path = "TheMrguiller/BilbaoCaptions"
     logger.info('loading datasets...')
-    train_dataset = prepare_training_dataset_Bilbao(config,path)
-    eval_dataset = prepare_evaluation_dataset_Bilbao(config,path)
-    
+    train_dataset = prepare_training_dataset(config)
+    eval_dataset = prepare_evaluation_dataset(config)    
     #################################################################
     # optimizer, scheduler, trainer
     #################################################################
@@ -204,8 +213,9 @@ if __name__ == '__main__':
     # training loop
     #################################################################
     logger.info('start training.')
-
     if training_args.resume_from_checkpoint is not None:
         trainer.train(training_args.resume_from_checkpoint)
     else:
         trainer.train()
+    
+    trainer.evaluate(eval_dataset)
