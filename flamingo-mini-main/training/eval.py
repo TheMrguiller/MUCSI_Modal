@@ -123,10 +123,10 @@ def evaluate_image_captioning( #https://github.com/tylin/coco-caption/blob/maste
             
     gts  = tokenizer.tokenize(gts)
     res = tokenizer.tokenize(res)
-    cider_metric=Cider()
-    spice_metric=Spice()
-    cider_result,_=cider_metric.compute_score(gts=gts,res=res)
-    print(f"CIDeR:{cider_result}")
+    # cider_metric=Cider()
+    # spice_metric=Spice()
+    # cider_result,_=cider_metric.compute_score(gts=gts,res=res)
+    # print(f"CIDeR:{cider_result}")
     # spice_result,_=spice_metric.compute_score(gts=gts,res=res)
 
     #Evaluate based in meteor,rouge.Novel metrics cider y spider
@@ -141,7 +141,8 @@ def evaluate_image_captioning( #https://github.com/tylin/coco-caption/blob/maste
     # coco_eval.params['image_id'] = coco_result.getImgIds()
     # coco_eval.evaluate()
     # result = {"Bleu":bleu_result["bleu"],"Meteor":meteor_result["meteor"],"Rouge":rouge_result["rougeL"],"CIDEr":cider_result,"SPICE":spice_result}
-    result = {"Bleu":bleu_result["bleu"],"Meteor":meteor_result["meteor"],"Rouge":rouge_result["rougeL"],"CIDEr":cider_result}
+    # result = {"Bleu":bleu_result["bleu"],"Meteor":meteor_result["meteor"],"Rouge":rouge_result["rougeL"],"CIDEr":cider_result}
+    result = {"Bleu":bleu_result["bleu"],"Meteor":meteor_result["meteor"],"Rouge":rouge_result["rougeL"]}
 
     return result
 
