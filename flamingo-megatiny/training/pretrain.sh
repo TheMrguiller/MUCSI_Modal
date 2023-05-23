@@ -1,11 +1,11 @@
 #!/bin/env bash
-
+export LANG=en_US.UTF-8  # For solving Meteor crash
 export CUDA_VISIBLE_DEVICES=0
 NUM_GPU=1
 
 ARGS="
---output_dir ./flamingo-coco
---run_name flamingo-megatiny-vitL-coco
+--output_dir ./flamingo-coco-opt
+--run_name flamingo-vitL-coco-opt
 --do_train --do_eval
 --optim adamw_torch
 --learning_rate 0.0001 
@@ -16,9 +16,9 @@ ARGS="
 --gradient_accumulation_steps 1
 --evaluation_strategy steps
 --eval_steps 500
---num_train_epochs 3
+--num_train_epochs 15
 --save_strategy epoch
---save_total_limit 2
+--save_total_limit 15
 --log_level info
 --dataloader_num_workers 14
 --dataloader_pin_memory True
@@ -31,8 +31,8 @@ echo $ARGS
 
 if [ $NUM_GPU == 1 ]; then
     echo "running on a single GPU"
-    python ./train.py $ARGS
+    python ./pretrain.py $ARGS
 else
     echo "running on multiple GPUs"
-    torchrun --nproc_per_node $NUM_GPU ./train.py $ARGS
+    torchrun --nproc_per_node $NUM_GPU ./pretrain.py $ARGS
 fi

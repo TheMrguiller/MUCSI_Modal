@@ -137,3 +137,9 @@ data/imgs/*/*.svg
 datasets/*
 flamingo-megatiny/training/nfs/*
 flamingo-megatiny/training/flamingo-coco/*
+flamingo-megatiny/training/flamingo-coco-opt-domain/*
+
+flamingo-megatiny/training/flamingo-coco-opt/*
+flamingo-megatiny/training/vizwiz/*
+flamingo-mini-main/training/imgs_test/*
+flamingo-mini-main/datasets/

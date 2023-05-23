@@ -6,7 +6,13 @@ import torch
 from PIL import Image
 from torch import nn
 import torch.utils.data as data
-from datasets import load_dataset
+from datasets import load_dataset,concatenate_datasets
+from typing import List
+from tqdm import tqdm
+import numpy as np
+import os
+
+
 def load_url(url: str):
     return Image.open(requests.get(url, stream=True).raw)
 
@@ -59,11 +65,25 @@ def get_common_prefix_length(x: torch.Tensor) -> int:
     
 class BilbaoCaptions(data.Dataset):
     #Clase parecida al de COCO pero adaptada a nuestro formato
-    def __init__(self, dataset:str,split_name:str,transform=None,target_transform=None):
-        self.dataset = load_dataset(dataset,split=split_name)
-        
+    def __init__(self, dataset:List[str],split_name:str,transform=None,target_transform=None):
+        lista_datasets=[]
+        for idx,path in enumerate(dataset):
+            lista_datasets.append(load_dataset(path,split=split_name))
+            if idx >0:
+                assert lista_datasets[idx-1].features.type == lista_datasets[idx].features.type
+          
+        self.dataset=concatenate_datasets(lista_datasets)
         self.transform = transform
         self.target_transform = target_transform
+        self.new_size = (224, 224)
+        self._resize_images(self.new_size)
+        self.dataset=self.dataset.shuffle(seed=42)
+        self.images= np.array([ image for image in tqdm(self.dataset["image"])],dtype=object)
+    def _resize_images(self, new_size):
+        for data_point in tqdm(self.dataset):
+            image = data_point['image']            
+            resized_image = image.resize(new_size)
+            data_point['image'] = resized_image
 
     def __getitem__(self, index):
         """
@@ -73,17 +93,44 @@ class BilbaoCaptions(data.Dataset):
             tuple: Tuple (image, target). target is a list of captions for the image.
         """
         
-        target = [ann['caption'] for ann in self.dataset]
+        target = self.dataset["caption"][index]
 
         
-        img = self.dataset["image"[index]]
+        # img = self.dataset["image"][index]
+        img = self.images[index]
         if self.transform is not None:
             img = self.transform(img)
 
         if self.target_transform is not None:
             target = self.target_transform(target)
-
+        
         return img, target
-
+    def __getcaption__(self,index):
+        return self.dataset["caption"][index]
     def __len__(self):
         return len(self.dataset)
+
+
+class VizWizCaptioningDataset(data.Dataset):
+    def __init__(self, image_dir, caption_file, transform=None):
+        self.image_dir = image_dir
+        self.captions = self.load_captions(caption_file)
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.captions)
+
+    def __getitem__(self, index):
+        image_id = self.captions[index]['image_id']
+        image_path = os.path.join(self.image_dir, f"{image_id}.jpg")
+        image = Image.open(image_path).convert("RGB")
+        
+        if self.transform is not None:
+            image = self.transform(image)
+        
+        caption = self.captions[index]['caption']
+        return image, caption
+
+    def load_captions(self, caption_file):
+        # Load and process the caption file
+        # Return a list of dictionaries, each containing image_id and caption

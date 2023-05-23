@@ -13,7 +13,6 @@ from torch.optim import AdamW
 from torch.utils.data import Dataset
 
 from torchvision import transforms as T
-from torchvision.datasets import CocoCaptions
 
 import transformers
 from transformers import HfArgumentParser, CLIPImageProcessor
@@ -22,16 +21,10 @@ from transformers.optimization import get_constant_schedule_with_warmup
 
 from flamingo_mini import FlamingoConfig, FlamingoModel, FlamingoProcessor
 
-from eval import evaluate_image_captioning  # don't ask me why this import works
+from eval import evaluate_image_captioning_Bilbao  # don't ask me why this import works
 from flamingo_mini.utils import BilbaoCaptions
 
 logger = logging.getLogger(__name__)
-
-
-# get images and annotations from https://cocodataset.org/#download
-COCO_ROOT      = 'nfs/data3/zhangya/coco2017/images'
-COCO_ANN_TRAIN = 'nfs/data3/hansmair/coco2017/captions_train2017.json'
-COCO_ANN_VAL   = 'nfs/data3/hansmair/coco2017/captions_val2017.json'
 
 
 class CLIPImageTransform:
@@ -44,8 +37,8 @@ class CLIPImageTransform:
     def __call__(self, image) -> torch.Tensor:
         return self.vision_processor(images=image, return_tensors="pt", padding=True)['pixel_values'] #Wrapper que codifica y preapara la imagen. Se encarga de hacer los patches y luego hace un linear
 
-        
-def prepare_training_dataset(config: FlamingoConfig):
+
+def prepare_training_dataset_Bilbao(config: FlamingoConfig,dataset_path:List[str]):
     """ prepare a CocoCaptions training dataset """
     transform = T.Compose([ #Con cierta probabilidad da la vuelta a la imagen y procesa la imagen con Clip
         T.RandomHorizontalFlip(),                       
@@ -53,29 +46,7 @@ def prepare_training_dataset(config: FlamingoConfig):
     ])
 
     def target_transform(captions):
-        return f"{random.choice(['', ' '])}<image>{random.choice(captions)}<EOC></s>"
-
-    return CocoCaptions(
-        COCO_ROOT, 
-        COCO_ANN_TRAIN, 
-        transform=transform,
-        target_transform=target_transform
-    )# Link a la clase de COCO https://github.com/facebookresearch/astmt/blob/master/fblib/dataloaders/coco.py
-
-def prepare_evaluation_dataset(config: FlamingoConfig):
-    return CocoCaptions(COCO_ROOT, COCO_ANN_VAL, 
-        transform=CLIPImageTransform(config.clip_model_type))
-
-
-def prepare_training_dataset_Bilbao(config: FlamingoConfig,dataset_path:str):
-    """ prepare a CocoCaptions training dataset """
-    transform = T.Compose([ #Con cierta probabilidad da la vuelta a la imagen y procesa la imagen con Clip
-        T.RandomHorizontalFlip(),                       
-        CLIPImageTransform(config.clip_model_type)
-    ])
-
-    def target_transform(captions):
-        return f"{random.choice(['', ' '])}<image>{random.choice(captions)}<EOC></s>"
+        return f"{random.choice(['', ' '])}<image>{captions}<EOC></s>"
 
     return BilbaoCaptions(
         dataset=dataset_path,
@@ -85,7 +56,7 @@ def prepare_training_dataset_Bilbao(config: FlamingoConfig,dataset_path:str):
     )# Link a la clase de COCO https://github.com/facebookresearch/astmt/blob/master/fblib/dataloaders/coco.py
        
 
-def prepare_evaluation_dataset_Bilbao(config: FlamingoConfig,dataset_path:str):
+def prepare_evaluation_dataset_Bilbao(config: FlamingoConfig,dataset_path:List[str]):
     return BilbaoCaptions(dataset=dataset_path, 
         transform=CLIPImageTransform(config.clip_model_type),
         split_name="test")
@@ -120,9 +91,10 @@ class FlamingoTrainer(Trainer):
     args: FlamingoTrainingArguments
     model: FlamingoModel
     processor: FlamingoProcessor
-    eval_dataset: CocoCaptions
+    eval_dataset: BilbaoCaptions
     
-    def evaluate(self,
+    
+    def  evaluate(self,
         eval_dataset: Optional[Dataset] = None,
         ignore_keys: Optional[List[str]] = None,
         metric_key_prefix: str = "eval"
@@ -130,19 +102,33 @@ class FlamingoTrainer(Trainer):
         """ override evaluation method to inject custom behavior. 
         TODO this only runs on one GPU, how to do distributed evaluation?
         """
-        metrics = evaluate_image_captioning(self.eval_dataset, self.model, 
-            prefix=self.args.eval_coco_captioning_prefix,
+        self._memory_tracker.start()
+
+        eval_dataloader = self.get_eval_dataloader(eval_dataset)
+
+        eval_loop = self.prediction_loop if self.args.use_legacy_prediction_loop else self.evaluation_loop
+        output = eval_loop(
+            eval_dataloader,
+            description="Evaluation",
+            # No point gathering the predictions if there are no metrics, otherwise we defer to
+            # self.args.prediction_loss_only
+            prediction_loss_only=True if self.compute_metrics is None else None,
+            ignore_keys=ignore_keys,
+            metric_key_prefix=metric_key_prefix,
+        )
+        metrics = evaluate_image_captioning_Bilbao(self.eval_dataset, self.model, 
+            prefix="",
             start=self.args.eval_coco_captioning_start,
-            end=self.args.eval_coco_captioning_end,
             batch_size=self.args.per_device_eval_batch_size,
             num_workers=self.args.dataloader_num_workers
         )
         metrics = {f"{metric_key_prefix}_{k}" : v for k, v in metrics.items()}
-
+        metrics["eval_loss"] =output.metrics["eval_loss"]
         # HF trainer stuff from overridden method
         self.log(metrics)
         self.control = self.callback_handler.on_evaluate(self.args, self.state, self.control, metrics)
         self._memory_tracker.stop_and_update_metrics(metrics)
+        
         return metrics
     
     
@@ -154,7 +140,7 @@ if __name__ == '__main__':
     logging.basicConfig(
         format=f'%(asctime)s {training_args.run_name} %(message)s', 
         datefmt='%H:%M:%S',
-        force=True,
+        #force=True,
         level=logging.INFO,
         handlers=[
             logging.StreamHandler(),
@@ -169,20 +155,18 @@ if __name__ == '__main__':
     logger.info(str(training_args))
 
     logger.info('loading model...')
-    config = FlamingoConfig(
-        xattn_act='sqrelu',
-        resampler_act='sqrelu'
-    )
+ 
     
     ## Pretained model
-    #model = FlamingoModel.from_pretrained('dhansmair/flamingo-tiny')
-    #config=model.config
-    #print(f"MOdel config:{config}")
-    #print(model.device)
+    model = FlamingoModel.from_pretrained('landersanmi/flamingo-megatiny-opt')
+    config=model.config
+    print("###################################################")
+    print(f"MOdel config:{config}")
+    print(model.device)
 
-    model = FlamingoModel(config) # Learning from scratch
+    # model = FlamingoModel(config) # Learning from scratch
 
-    device=device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model.to(device)
     print(model.device)
     model.train()
@@ -190,10 +174,11 @@ if __name__ == '__main__':
     #################################################################
     # datasets
     #################################################################
-    path = "TheMrguiller/BilbaoCaptions"
+    path = ["TheMrguiller/BilbaoCaptions","landersanmi/BilbaoCaptions2"]
+    #path = ["landersanmi/BilbaoCaptions2"]
     logger.info('loading datasets...')
-    train_dataset = prepare_training_dataset(config)
-    eval_dataset = prepare_evaluation_dataset(config)    
+    train_dataset = prepare_training_dataset_Bilbao(config, path)
+    eval_dataset = prepare_evaluation_dataset_Bilbao(config, path)    
     #################################################################
     # optimizer, scheduler, trainer
     #################################################################
@@ -213,9 +198,10 @@ if __name__ == '__main__':
     # training loop
     #################################################################
     logger.info('start training.')
+
     if training_args.resume_from_checkpoint is not None:
         trainer.train(training_args.resume_from_checkpoint)
     else:
         trainer.train()
-    
     trainer.evaluate(eval_dataset)
+

@@ -5,7 +5,7 @@ class FlamingoConfig(PretrainedConfig):
     
     def __init__(
         self,
-        lm: str = 'gpt2',
+        lm: str = 'facebook/opt-125m',
         clip_model_type: str = 'openai/clip-vit-base-patch32',
         dim: int = 768,
         dim_visual: int = 768,
