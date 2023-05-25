@@ -75,7 +75,7 @@ def prepare_evaluation_dataset_Bilbao(config: FlamingoConfig,dataset_path:List[s
 def prepare_evaluation_dataset_BilbaoQA(config: FlamingoConfig,dataset_path:List[str],split_name="train"):
     def target_transform(data):
         #Depending on the task we change the task token
-        if data["answer"]=="":
+        if data["solution"]!="":
             return f"{random.choice(['', ' '])}[COT][CONTEXT]<image>{data['question']}{data['choices']}</s>"
         else:
             return f"{random.choice(['', ' '])}[QA][CONTEXT]<image>{data['question']}{data['choices']}</s>"
@@ -105,12 +105,11 @@ class DataCollatorQA:
         
     def __call__(self, batch):
         pixel_values, sentences, labels = zip(*batch)
-        print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
-        print(f"length input:{len(sentences)},length labels:{len(labels)}")
         inputs = self.processor(text=sentences)
         label=self.processor(text=labels)
         pixel_values = torch.stack(pixel_values)
         print("/////////////////////////////////")
+        print(f"length input:{len(sentences)},length labels:{len(labels)}")
         print(f"input:{inputs['input_ids'].shape},label:{label['input_ids'].shape}")
         return dict(
             pixel_values=pixel_values,

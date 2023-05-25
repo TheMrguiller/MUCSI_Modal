@@ -129,7 +129,7 @@ class BilbaoQA(data.Dataset):
         self._resize_images(self.new_size)
         ## Duplicate those entries that have chainofthought in it in order to train in both task, and put the answer in blank
         self.datasetcot= self.dataset.filter(lambda value: value["CTH"]==False)
-        self.datasetcot=self.datasetcot.map(self.blank_proccess) #Ponemos en blanco para utilizarlo como flag
+        #self.datasetcot=self.datasetcot.map(self.blank_proccess) #Ponemos en blanco para utilizarlo como flag
         self.dataset = concatenate_datasets([self.dataset,self.datasetcot])
         print(f"Total QA and COT:{self.dataset}")
         self.dataset=self.dataset.shuffle(seed=42)
@@ -138,12 +138,14 @@ class BilbaoQA(data.Dataset):
     def blank_proccess(self,example):
         example["answer"] = ""
         return example
+        
     def _resize_images(self, new_size):
         for data_point in tqdm(self.dataset):
-            image = data_point['image']    
-            if image !=None:        
-                resized_image = image.resize(new_size)
-                data_point['image'] = resized_image
+            image = data_point['image']  
+            resized_image = image.resize(new_size)
+            data_point['image'] = resized_image  
+                  
+		
 
     def __getitem__(self, index):
         """
@@ -155,8 +157,8 @@ class BilbaoQA(data.Dataset):
         
         
         target = self.dataset[index]
-        if self.dataset["answer"][index]=="":
-            label = self.dataset["solution"][index]
+        if self.dataset["solution"][index]!="":
+            label = self.dataset["solution"][index].replace("\n","")
         else:
             label = self.dataset["answer"][index]
         # img = self.dataset["image"][index]
@@ -166,7 +168,7 @@ class BilbaoQA(data.Dataset):
 
         if self.target_transform is not None:
             target = self.target_transform(target)
-        
+        #print(label)
         return img, target, label
     
     def __getcaption__(self,index):
