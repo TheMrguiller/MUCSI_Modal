@@ -54,10 +54,16 @@ def prepare_training_dataset_Bilbao(config: FlamingoConfig,dataset_path:List[str
 
     def target_transform(data):
         #Depending on the task we change the task token
-        if data["answer"]=="":
-            return f"{random.choice(['', ' '])}[QA][CONTEXT]<image>{data['question']}{data['choices']}</s>"
+        if data["image"] ==None:
+            if data["answer"]=="":
+                return f"{random.choice(['', ' '])}[COT][CONTEXT]<image>{data['question']}{data['choices']}</s>"
+            else:
+                return f"{random.choice(['', ' '])}[QA][CONTEXT]{data['question']}{data['choices']}</s>"
         else:
-            return f"{random.choice(['', ' '])}[COT][CONTEXT]<image>{data['question']}{data['choices']}</s>"
+            if data["answer"]=="":
+                return f"{random.choice(['', ' '])}[COT][CONTEXT]<image>{data['question']}{data['choices']}</s>"
+            else:
+                return f"{random.choice(['', ' '])}[QA][CONTEXT]<image>{data['question']}{data['choices']}</s>"
 
     return BilbaoQA(
         dataset=dataset_path,
@@ -210,7 +216,7 @@ if __name__ == '__main__':
     #################################################################
     # datasets
     #################################################################
-    path = ["TheMrguiller/BilbaoCaptions","landersanmi/BilbaoCaptions2"]
+    path = ["TheMrguiller/ScienceQA","TheMrguiller/BilbaoQA","TheMrguiller/BilbaoQA2"]
     logger.info('loading datasets...')
     train_dataset = prepare_training_dataset_Bilbao(config,path)
     eval_dataset = prepare_evaluation_dataset_Bilbao(config,path)

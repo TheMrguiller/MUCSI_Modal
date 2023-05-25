@@ -70,7 +70,7 @@ def evaluate_image_captioning( #https://github.com/tylin/coco-caption/blob/maste
     dataset: BilbaoCaptions,
     model: FlamingoModel, 
     *,
-    prefix: str = "",
+    prefix: str = "<image>",
     start = 0,
     end: Optional[int] = None,
     verbose: bool = True,

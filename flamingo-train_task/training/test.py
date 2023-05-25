@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import torch
 from flamingo_mini_task.utils import load_url
 from flamingo_mini_task import FlamingoModel, FlamingoProcessor
-from datasets import load_dataset
+from datasets import load_dataset,concatenate_datasets
 
 # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # model = FlamingoModel.from_pretrained('/home/d4k/Documents/guillermo/MUCSI_Modal/flamingo-mini-main/training/flamingo-Bilbao/checkpoint-2420')
@@ -12,10 +12,8 @@ from datasets import load_dataset
 # processor = FlamingoProcessor(model.config)
 # model.push_to_hub("TheMrguiller/Flamingo-mini-Bilbao_Captions")
 # dataset=load_dataset("landersanmi/BilbaoCaptions2",)
-dataset=load_dataset("TheMrguiller/ScienceQA")
-print(dataset["train"]["CTH"][0])
-print(dataset["train"]["CTH"][1])
-print(dataset["train"]["CTH"][2])
+# dataset=load_dataset("TheMrguiller/ScienceQA")
+
 # caption = model.generate_captions(processor, images=[dataset["train"]["image"][400]])
 # print('generated caption:')
 # print(caption)
