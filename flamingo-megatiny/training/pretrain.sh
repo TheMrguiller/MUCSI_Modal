@@ -4,15 +4,15 @@ export CUDA_VISIBLE_DEVICES=0
 NUM_GPU=1
 
 ARGS="
---output_dir ./flamingo-coco-opt
---run_name flamingo-vitL-coco-opt
+--output_dir ./flamingo-coco-opt-vizwiz-evalcoco2
+--run_name flamingo-vitL-coco-opt-vizwiz-se-evalcoco2
 --do_train --do_eval
 --optim adamw_torch
 --learning_rate 0.0001 
---warmup_steps 500
+--warmup_steps 1000
 --lr_scheduler_type constant_with_warmup
---per_device_train_batch_size 16
---per_device_eval_batch_size 16
+--per_device_train_batch_size 8
+--per_device_eval_batch_size 32
 --gradient_accumulation_steps 1
 --evaluation_strategy steps
 --eval_steps 500

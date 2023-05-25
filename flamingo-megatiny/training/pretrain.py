@@ -23,7 +23,7 @@ from transformers.optimization import get_constant_schedule_with_warmup
 from flamingo_mini import FlamingoConfig, FlamingoModel, FlamingoProcessor
 from flamingo_mini.utils import VizWizCaptioningDataset
 
-from eval import evaluate_image_captioning  # don't ask me why this import works
+from eval import evaluate_image_captioning_coco, evaluate_image_captioning_vizwiz  # don't ask me why this import works
 
 logger = logging.getLogger(__name__)
 
@@ -34,8 +34,8 @@ COCO_ANN_TRAIN = 'nfs/data3/hansmair/coco2017/captions_train2017.json'
 COCO_ANN_VAL   = 'nfs/data3/hansmair/coco2017/captions_val2017.json'
 
 # Get images and annotations from https://vizwiz.org/tasks-and-datasets/image-captioning/#
-VIZWIZ_ROOT = 'vizwiz'
-VIZWIZ_ANN = 'vizwiz/annotations'
+VIZWIZ_IMG_DIR = 'vizwiz'
+VIZWIZ_ANN_DIR = 'vizwiz/annotations'
 
 class CLIPImageTransform:
     """ experimental. A transform that does apply the transforms of a default CLIPFeatureExtractor """
@@ -72,7 +72,8 @@ def prepare_evaluation_dataset_coco(config: FlamingoConfig):
 def prepare_training_dataset_vizwiz(config: FlamingoConfig):
     """ prepare a Vizwiz training dataset """
     transform = T.Compose([ #Con cierta probabilidad da la vuelta a la imagen y procesa la imagen con Clip
-        T.RandomHorizontalFlip(),                       
+        T.RandomHorizontalFlip(),     
+        T.Resize((224, 224)),                  
         CLIPImageTransform(config.clip_model_type)
     ])
 
@@ -80,14 +81,15 @@ def prepare_training_dataset_vizwiz(config: FlamingoConfig):
         return f"{random.choice(['', ' '])}<image>{random.choice(captions)}<EOC></s>"
 
     return VizWizCaptioningDataset(
-        VIZWIZ_ROOT, 
-        VIZWIZ_ANN, 
+        VIZWIZ_IMG_DIR, 
+        VIZWIZ_ANN_DIR,
+        'train',
         transform=transform,
         target_transform=target_transform
     )
 
 def prepare_evaluation_dataset_vizwiz(config: FlamingoConfig):
-    return VizWizCaptioningDataset(VIZWIZ_ROOT, VIZWIZ_ANN, 
+    return VizWizCaptioningDataset(VIZWIZ_IMG_DIR, VIZWIZ_ANN_DIR, 'val',
         transform=CLIPImageTransform(config.clip_model_type))
 
 
@@ -120,7 +122,8 @@ class FlamingoTrainer(Trainer):
     args: FlamingoTrainingArguments
     model: FlamingoModel
     processor: FlamingoProcessor
-    eval_dataset: CocoCaptions
+    eval_dataset: VizWizCaptioningDataset
+    # eval_dataset: CocoCaptions
     
     
     def  evaluate(self,
@@ -133,15 +136,24 @@ class FlamingoTrainer(Trainer):
         """
         
         self._memory_tracker.start()
-        metrics = evaluate_image_captioning(self.eval_dataset, self.model, 
+        """
+        metrics = evaluate_image_captioning_coco(self.eval_dataset, self.model, 
             prefix=self.args.eval_coco_captioning_prefix,
             start=self.args.eval_coco_captioning_start,
             end=self.args.eval_coco_captioning_end,
             batch_size=self.args.per_device_eval_batch_size,
             num_workers=self.args.dataloader_num_workers
         )
-        metrics = {f"{metric_key_prefix}_{k}" : v for k, v in metrics.items()}
+        """
+        metrics = evaluate_image_captioning_vizwiz(self.eval_dataset, self.model, 
+            prefix="<image>",
+            start=self.args.eval_coco_captioning_start,
+            batch_size=self.args.per_device_eval_batch_size,
+            num_workers=self.args.dataloader_num_workers
+        )
         
+        metrics = {f"{metric_key_prefix}_{k}" : v for k, v in metrics.items()}
+
         # HF trainer stuff from overridden method
         self.log(metrics)
         self.control = self.callback_handler.on_evaluate(self.args, self.state, self.control, metrics)
@@ -177,13 +189,13 @@ if __name__ == '__main__':
         resampler_act='sqrelu'
     )
     
-    ##Pretained model
-    #model = FlamingoModel.from_pretrained('dhansmair/flamingo-mini')
-    #config=model.config
-    #print(f"MOdel config:{config}")
-    #print(model.device)
+    ## Load Pretained megatiny-opt model
+    model = FlamingoModel.from_pretrained('landersanmi/flamingo-megatiny-opt')
+    config=model.config
+    print(f"MOdel config:{config}")
+    print(model.device)
 
-    model = FlamingoModel(config) # Learning from scratch
+    #model = FlamingoModel(config) # Learning from scratch in coco
 
     device=device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model.to(device)
@@ -194,8 +206,8 @@ if __name__ == '__main__':
     # datasets
     #################################################################
     logger.info('loading datasets...')
-    train_dataset = prepare_training_dataset_coco(config)
-    eval_dataset = prepare_evaluation_dataset_coco(config)    
+    train_dataset = prepare_training_dataset_vizwiz(config)
+    eval_dataset = prepare_evaluation_dataset_vizwiz(config)    
     #################################################################
     # optimizer, scheduler, trainer
     #################################################################
@@ -220,4 +232,4 @@ if __name__ == '__main__':
         trainer.train(training_args.resume_from_checkpoint)
     else:
         trainer.train()
-
+    torch.cuda.empty_cache()

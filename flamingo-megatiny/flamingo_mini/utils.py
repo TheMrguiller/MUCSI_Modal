@@ -11,7 +11,7 @@ from typing import List
 from tqdm import tqdm
 import numpy as np
 import os
-
+import json
 
 def load_url(url: str):
     return Image.open(requests.get(url, stream=True).raw)
@@ -112,25 +112,52 @@ class BilbaoCaptions(data.Dataset):
 
 
 class VizWizCaptioningDataset(data.Dataset):
-    def __init__(self, image_dir, caption_file, transform=None):
-        self.image_dir = image_dir
-        self.captions = self.load_captions(caption_file)
+    def __init__(self, image_dir, annotation_dir, split, transform=None, target_transform=None):
+        self.image_dir = image_dir + '/' + split
+        self.annotation_file = os.path.join(annotation_dir, f"{split}.json")
+        self.annotations = self.load_annotations()
+        self.image_id_to_captions = self.build_caption_mapping()
+
         self.transform = transform
+        self.target_transform = target_transform
 
     def __len__(self):
-        return len(self.captions)
+        return len(self.annotations['images'])
 
     def __getitem__(self, index):
-        image_id = self.captions[index]['image_id']
-        image_path = os.path.join(self.image_dir, f"{image_id}.jpg")
+        image_info = self.annotations['images'][index]
+        image_path = os.path.join(self.image_dir, image_info['file_name'])
         image = Image.open(image_path).convert("RGB")
-        
+
         if self.transform is not None:
             image = self.transform(image)
         
-        caption = self.captions[index]['caption']
-        return image, caption
+        target = self.__get_captions__(index)
+        if self.target_transform is not None:
+            target = self.target_transform(target)
 
-    def load_captions(self, caption_file):
-        # Load and process the caption file
-        # Return a list of dictionaries, each containing image_id and caption
+        return image, target
+    
+    def __get_captions__(self, image_id):
+        item_info = self.annotations['images'][image_id]
+        original_id = item_info['id']
+        return self.image_id_to_captions[original_id]
+    
+    def build_caption_mapping(self):
+        image_id_to_captions = {}
+        annotations = self.annotations['annotations']
+        for annotation in annotations:
+            image_id = annotation['image_id']
+            caption = annotation['caption']
+            if image_id in image_id_to_captions:
+                image_id_to_captions[image_id].append(caption)
+            else:
+                image_id_to_captions[image_id] = [caption]
+        return image_id_to_captions
+    
+    def load_annotations(self):
+        with open(self.annotation_file, 'r') as f:
+            annotations = json.load(f)
+        return annotations
+
+

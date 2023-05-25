@@ -143,3 +143,7 @@ flamingo-megatiny/training/flamingo-coco-opt/*
 flamingo-megatiny/training/vizwiz/*
 flamingo-mini-main/training/imgs_test/*
 flamingo-mini-main/datasets/
+flamingo-megatiny/training/flamingo-coco-opt-vizwiz/*
+flamingo-megatiny/training/imgs_test/*
+flamingo-megatiny/datasets/
+flamingo-megatiny/training/flamingo-coco-opt-vizwiz-domain/*
