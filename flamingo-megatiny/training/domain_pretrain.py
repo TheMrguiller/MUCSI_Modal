@@ -117,7 +117,7 @@ class FlamingoTrainer(Trainer):
             metric_key_prefix=metric_key_prefix,
         )
         metrics = evaluate_image_captioning_Bilbao(self.eval_dataset, self.model, 
-            prefix="",
+            prefix="<image>",
             start=self.args.eval_coco_captioning_start,
             batch_size=self.args.per_device_eval_batch_size,
             num_workers=self.args.dataloader_num_workers
