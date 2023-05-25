@@ -54,16 +54,10 @@ def prepare_training_dataset_Bilbao(config: FlamingoConfig,dataset_path:List[str
 
     def target_transform(data):
         #Depending on the task we change the task token
-        if data["image"] ==None:
-            if data["answer"]=="":
-                return f"{random.choice(['', ' '])}[COT][CONTEXT]<image>{data['question']}{data['choices']}</s>"
-            else:
-                return f"{random.choice(['', ' '])}[QA][CONTEXT]{data['question']}{data['choices']}</s>"
+        if data["answer"]=="":
+            return f"{random.choice(['', ' '])}[COT][CONTEXT]<image>{data['question']}{data['choices']}</s>"
         else:
-            if data["answer"]=="":
-                return f"{random.choice(['', ' '])}[COT][CONTEXT]<image>{data['question']}{data['choices']}</s>"
-            else:
-                return f"{random.choice(['', ' '])}[QA][CONTEXT]<image>{data['question']}{data['choices']}</s>"
+            return f"{random.choice(['', ' '])}[QA][CONTEXT]<image>{data['question']}{data['choices']}</s>"
 
     return BilbaoQA(
         dataset=dataset_path,
@@ -76,8 +70,20 @@ def prepare_training_dataset_Bilbao(config: FlamingoConfig,dataset_path:List[str
 def prepare_evaluation_dataset_Bilbao(config: FlamingoConfig,dataset_path:List[str]):
     return BilbaoQA(dataset=dataset_path, 
         transform=CLIPImageTransform(config.clip_model_type),
+        
         split_name="test")
+def prepare_evaluation_dataset_BilbaoQA(config: FlamingoConfig,dataset_path:List[str],split_name="train"):
+    def target_transform(data):
+        #Depending on the task we change the task token
+        if data["answer"]=="":
+            return f"{random.choice(['', ' '])}[COT][CONTEXT]<image>{data['question']}{data['choices']}</s>"
+        else:
+            return f"{random.choice(['', ' '])}[QA][CONTEXT]<image>{data['question']}{data['choices']}</s>"
 
+    return BilbaoQA(dataset=dataset_path, 
+        transform=CLIPImageTransform(config.clip_model_type),
+        target_transform=target_transform,
+        split_name=split_name)
 
 class DataCollator:
     def __init__(self, config: FlamingoConfig):
@@ -98,11 +104,14 @@ class DataCollatorQA:
         self.processor = FlamingoProcessor(config)
         
     def __call__(self, batch):
-        pixel_values, sentences,label = zip(*batch)
+        pixel_values, sentences, labels = zip(*batch)
+        print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
+        print(f"length input:{len(sentences)},length labels:{len(labels)}")
         inputs = self.processor(text=sentences)
-        label=self.processor(text=label)
+        label=self.processor(text=labels)
         pixel_values = torch.stack(pixel_values)
-        
+        print("/////////////////////////////////")
+        print(f"input:{inputs['input_ids'].shape},label:{label['input_ids'].shape}")
         return dict(
             pixel_values=pixel_values,
             labels=label['input_ids'],
@@ -204,7 +213,7 @@ if __name__ == '__main__':
     #     resampler_act='sqrelu'
     # )
     # model = FlamingoModel(config)
-    model = FlamingoModel.from_pretrained('dhansmair/flamingo-mini')
+    model = FlamingoModel.from_pretrained('TheMrguiller/Flamingo-mini-Bilbao_Captions',ignore_mismatched_sizes=True)
     config=model.config
     print(f"Model config:{config}")
     device=device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -219,7 +228,7 @@ if __name__ == '__main__':
     path = ["TheMrguiller/ScienceQA","TheMrguiller/BilbaoQA","TheMrguiller/BilbaoQA2"]
     logger.info('loading datasets...')
     train_dataset = prepare_training_dataset_Bilbao(config,path)
-    eval_dataset = prepare_evaluation_dataset_Bilbao(config,path)
+    eval_dataset = prepare_evaluation_dataset_BilbaoQA(config,path,split_name="test")
     
     #################################################################
     # optimizer, scheduler, trainer

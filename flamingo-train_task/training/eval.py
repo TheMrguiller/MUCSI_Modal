@@ -65,6 +65,11 @@ class MyDatasetWrapper(Dataset):
 #     coco_eval.params['image_id'] = coco_result.getImgIds()
 #     coco_eval.evaluate()
 #     return coco_eval.eval
+def calculate_accuracy(hipotesis,reference):
+    if hipotesis == reference:
+        return 1
+    else:
+        return 0
 @torch.no_grad()
 def evaluate_image_captioning( #https://github.com/tylin/coco-caption/blob/master/pycocoevalcap/eval.py
     dataset: BilbaoQA,
@@ -79,8 +84,10 @@ def evaluate_image_captioning( #https://github.com/tylin/coco-caption/blob/maste
 ) -> Dict[str, float]:
 
     processor = FlamingoProcessor(model.config)
-    captions_ = []
-    ref_captions =[]
+    accuracy_sum=0
+    total_QA=0
+    captions_COT = []
+    ref_captions_COT =[]
     wrapper = MyDatasetWrapper(dataset)
     
     wrapper = Subset(wrapper, range(start, end if end is not None else len(wrapper)))
@@ -104,17 +111,21 @@ def evaluate_image_captioning( #https://github.com/tylin/coco-caption/blob/maste
         captions = model.generate_captions(
             processor, 
             pixel_values=pixels.to(model.device),
-            prompt=prefix,
+            prompt=targets,
             device=device
         )
         # 
         # print(dataset.__getcaption__(image_ids))
         # captions.append(captions)
         # ref_captions.append(dataset.__getcaption__(image_ids))
-        for image_id, caption in zip(image_ids.tolist(), captions):
-            captions_.append(caption)
-            ref_caption=dataset.__getcaption__(image_id)
-            ref_captions.append(ref_caption)
+        for image_id, caption,target,label in zip(image_ids.tolist(), captions,targets,labels):
+            if "[QA]" in target:
+                #calculate accuracy
+                accuracy_sum += calculate_accuracy(caption,label)
+                total_QA += 1
+            if "[COT]" in target:
+                captions_COT.append(caption)
+                ref_captions_COT.append(label)
             # print(caption)
             # print(image_id)
             # gts[image_id]= {"caption":caption}
@@ -132,18 +143,19 @@ def evaluate_image_captioning( #https://github.com/tylin/coco-caption/blob/maste
 
     #Evaluate based in meteor,rouge.Novel metrics cider y spider
     bleu_metric = evaluate.load("bleu")
-    bleu_result = bleu_metric.compute(predictions=captions_, references=ref_captions)
+    bleu_result = bleu_metric.compute(predictions=captions_COT, references=ref_captions_COT)
     meteor_metric = evaluate.load('meteor')
-    meteor_result=meteor_metric.compute(predictions=captions_, references=ref_captions)
+    meteor_result=meteor_metric.compute(predictions=captions_COT, references=ref_captions_COT)
     rougue_metric=evaluate.load('rouge')
-    rouge_result=rougue_metric.compute(predictions=captions_, references=ref_captions)
+    rouge_result=rougue_metric.compute(predictions=captions_COT, references=ref_captions_COT)
+    accuracy_score = accuracy_sum/total_QA
     # coco_result = dataset.coco.loadRes(results)
     # coco_eval = COCOEvalCap(dataset.coco, coco_result)
     # coco_eval.params['image_id'] = coco_result.getImgIds()
     # coco_eval.evaluate()
     # result = {"Bleu":bleu_result["bleu"],"Meteor":meteor_result["meteor"],"Rouge":rouge_result["rougeL"],"CIDEr":cider_result,"SPICE":spice_result}
     # result = {"Bleu":bleu_result["bleu"],"Meteor":meteor_result["meteor"],"Rouge":rouge_result["rougeL"],"CIDEr":cider_result}
-    result = {"Bleu":bleu_result["bleu"],"Meteor":meteor_result["meteor"],"Rouge":rouge_result["rougeL"]}
+    result = {"Bleu":bleu_result["bleu"],"Meteor":meteor_result["meteor"],"Rouge":rouge_result["rougeL"],"Accuracy_score":accuracy_score}
 
     return result
 

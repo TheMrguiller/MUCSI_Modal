@@ -5,17 +5,17 @@ NUM_GPU=1
 
 ARGS="
 --output_dir ./flamingo-Bilbao
---run_name flamingo-mini-vitL_base
+--run_name flamingo-tiny-vitL_base_prueba
 --do_train --do_eval
 --optim adamw_torch
 --learning_rate 0.0001 
---warmup_steps 121
+--warmup_steps 125
 --lr_scheduler_type constant_with_warmup
 --per_device_train_batch_size 16
 --per_device_eval_batch_size 16
 --gradient_accumulation_steps 1
 --evaluation_strategy epoch
---num_train_epochs 5
+--num_train_epochs 6
 --save_strategy epoch
 --save_total_limit 2
 --log_level info

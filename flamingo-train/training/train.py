@@ -124,7 +124,7 @@ class FlamingoTrainer(Trainer):
             metric_key_prefix=metric_key_prefix,
         )
         metrics = evaluate_image_captioning(self.eval_dataset, self.model, 
-            prefix="",
+            prefix="<image>",
             start=self.args.eval_coco_captioning_start,
             batch_size=self.args.per_device_eval_batch_size,
             num_workers=self.args.dataloader_num_workers
@@ -180,7 +180,7 @@ if __name__ == '__main__':
     #     resampler_act='sqrelu'
     # )
     # model = FlamingoModel(config)
-    model = FlamingoModel.from_pretrained('dhansmair/flamingo-mini')
+    model = FlamingoModel.from_pretrained('dhansmair/flamingo-tiny')
     config=model.config
     print(f"Model config:{config}")
     device=device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
