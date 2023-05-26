@@ -106,11 +106,17 @@ class DataCollatorQA:
     def __call__(self, batch):
         pixel_values, sentences, labels = zip(*batch)
         inputs = self.processor(text=sentences)
+        max_length_1 = max(len(sequence) for sequence in inputs['input_ids'])
+        # print(f"Input max length:{max_length_1}")
         label=self.processor(text=labels)
+        max_length_2 = max(len(sequence) for sequence in label['input_ids'])
+        # print(f"Label max length:{max_length_2}")
         pixel_values = torch.stack(pixel_values)
-        print("/////////////////////////////////")
-        print(f"length input:{len(sentences)},length labels:{len(labels)}")
-        print(f"input:{inputs['input_ids'].shape},label:{label['input_ids'].shape}")
+        inputs = self.processor(text=sentences,max_length=max([max_length_1,max_length_2]))
+        label= self.processor(text=sentences,max_length=max([max_length_1,max_length_2]))
+        # print("/////////////////////////////////")
+        # print(f"length input:{len(sentences)},length labels:{len(labels)}")
+        # print(f"input:{inputs['input_ids'].shape},label:{label['input_ids'].shape}")
         return dict(
             pixel_values=pixel_values,
             labels=label['input_ids'],
@@ -155,6 +161,7 @@ class FlamingoTrainer(Trainer):
             ignore_keys=ignore_keys,
             metric_key_prefix=metric_key_prefix,
         )
+        print(output.metrics["eval_loss"])
         metrics = evaluate_image_captioning(self.eval_dataset, self.model, 
             prefix="",
             start=self.args.eval_coco_captioning_start,
@@ -225,6 +232,7 @@ if __name__ == '__main__':
     # datasets
     #################################################################
     path = ["TheMrguiller/ScienceQA","TheMrguiller/BilbaoQA","TheMrguiller/BilbaoQA2"]
+    
     logger.info('loading datasets...')
     train_dataset = prepare_training_dataset_Bilbao(config,path)
     eval_dataset = prepare_evaluation_dataset_BilbaoQA(config,path,split_name="test")
@@ -249,7 +257,7 @@ if __name__ == '__main__':
     # training loop
     #################################################################
     logger.info('start training.')
-    trainer.evaluate(eval_dataset)
+    # trainer.evaluate(eval_dataset)
     
     if training_args.resume_from_checkpoint is not None:
         trainer.train(training_args.resume_from_checkpoint)

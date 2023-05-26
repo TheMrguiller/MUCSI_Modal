@@ -289,6 +289,7 @@ class FlamingoBaseModel(ABC, PreTrainedModel):
             # loss function calculation, inspired by hf implementations
             # Shift so that tokens < n predict n
             # logits shape (batch, seq_length, #words)
+
             shift_logits = logits[..., :-1, :].contiguous()
             # labels shape (batch, seq_length)
             shift_labels = labels[..., 1:].contiguous()
@@ -296,7 +297,14 @@ class FlamingoBaseModel(ABC, PreTrainedModel):
             # Flatten the tokens
             loss = F.cross_entropy(shift_logits.view(-1, shift_logits.size(-1)),
                                    shift_labels.view(-1), reduction=loss_reduction)
+            
 
+            # # Create a mask for padding tokens
+            # mask = (shift_labels != self.flamingo.lm.config.eos_token_id)
+
+            # # Flatten the tokens and apply the mask
+            # loss = F.cross_entropy(shift_logits.view(-1, shift_logits.size(-1)),
+            #                     shift_labels.view(-1), reduction=loss_reduction, ignore_index=self.flamingo.lm.config.eos_token_id, weight=mask.view(-1).float())
         return CausalLMOutputWithPast(
             loss=loss,
             logits=logits,
