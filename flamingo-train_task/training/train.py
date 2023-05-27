@@ -55,9 +55,9 @@ def prepare_training_dataset_Bilbao(config: FlamingoConfig,dataset_path:List[str
     def target_transform(data):
         #Depending on the task we change the task token
         if data["answer"]=="":
-            return f"{random.choice(['', ' '])}[COT][CONTEXT]<image>{data['question']}{data['choices']}</s>"
+            return f"{random.choice(['', ' '])}[COT][CONTEXT]<image>{data['question']}{data['choices']}<EOC></s>"
         else:
-            return f"{random.choice(['', ' '])}[QA][CONTEXT]<image>{data['question']}{data['choices']}</s>"
+            return f"{random.choice(['', ' '])}[QA][CONTEXT]<image>{data['question']}{data['choices']}<EOC></s>"
 
     return BilbaoQA(
         dataset=dataset_path,
@@ -106,14 +106,12 @@ class DataCollatorQA:
     def __call__(self, batch):
         pixel_values, sentences, labels = zip(*batch)
         inputs = self.processor(text=sentences)
-        max_length_1 = max(len(sequence) for sequence in inputs['input_ids'])
+        # max_length_1 = max(len(sequence) for sequence in inputs['input_ids'])
         # print(f"Input max length:{max_length_1}")
         label=self.processor(text=labels)
-        max_length_2 = max(len(sequence) for sequence in label['input_ids'])
+        # max_length_2 = max(len(sequence) for sequence in label['input_ids'])
         # print(f"Label max length:{max_length_2}")
         pixel_values = torch.stack(pixel_values)
-        inputs = self.processor(text=sentences,max_length=max([max_length_1,max_length_2]))
-        label= self.processor(text=sentences,max_length=max([max_length_1,max_length_2]))
         # print("/////////////////////////////////")
         # print(f"length input:{len(sentences)},length labels:{len(labels)}")
         # print(f"input:{inputs['input_ids'].shape},label:{label['input_ids'].shape}")
@@ -221,6 +219,7 @@ if __name__ == '__main__':
     # model = FlamingoModel(config)
     model = FlamingoModel.from_pretrained('TheMrguiller/Flamingo-mini-Bilbao_Captions',ignore_mismatched_sizes=True)
     config=model.config
+    # model.lm.
     print(f"Model config:{config}")
     device=device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model.to(device)
@@ -257,7 +256,7 @@ if __name__ == '__main__':
     # training loop
     #################################################################
     logger.info('start training.')
-    # trainer.evaluate(eval_dataset)
+    trainer.evaluate(eval_dataset)
     
     if training_args.resume_from_checkpoint is not None:
         trainer.train(training_args.resume_from_checkpoint)

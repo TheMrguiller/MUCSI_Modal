@@ -9,7 +9,7 @@ ARGS="
 --do_train --do_eval
 --optim adamw_torch
 --learning_rate 0.00001 
---warmup_steps 121
+--warmup_steps 735
 --lr_scheduler_type constant_with_warmup
 --per_device_train_batch_size 16
 --per_device_eval_batch_size 16

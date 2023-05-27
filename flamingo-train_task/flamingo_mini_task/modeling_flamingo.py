@@ -285,29 +285,54 @@ class FlamingoBaseModel(ABC, PreTrainedModel):
                 xattn_past_key_values.append(modified_layer.kv_output)
 
         loss = None
+        logits_no_padding = logits.clone()
         if labels is not None:
-            # loss function calculation, inspired by hf implementations
-            # Shift so that tokens < n predict n
-            # logits shape (batch, seq_length, #words)
+            # # loss function calculation, inspired by hf implementations
+            # # Shift so that tokens < n predict n
+            # # logits shape (batch, seq_length, #words)
 
-            shift_logits = logits[..., :-1, :].contiguous()
-            # labels shape (batch, seq_length)
-            shift_labels = labels[..., 1:].contiguous()
+            # shift_logits = logits[..., :-1, :].contiguous()
+            # # labels shape (batch, seq_length)
+            # shift_labels = labels[..., 1:].contiguous()
 
-            # Flatten the tokens
-            loss = F.cross_entropy(shift_logits.view(-1, shift_logits.size(-1)),
-                                   shift_labels.view(-1), reduction=loss_reduction)
-            
-
-            # # Create a mask for padding tokens
-            # mask = (shift_labels != self.flamingo.lm.config.eos_token_id)
-
-            # # Flatten the tokens and apply the mask
+            # # Flatten the tokens
             # loss = F.cross_entropy(shift_logits.view(-1, shift_logits.size(-1)),
-            #                     shift_labels.view(-1), reduction=loss_reduction, ignore_index=self.flamingo.lm.config.eos_token_id, weight=mask.view(-1).float())
+            #                        shift_labels.view(-1), reduction=loss_reduction)
+            
+            # batch_size, seq_length, num_classes = logits.size()
+
+            # # Aplanar los tensores para poder comparar cada predicción con su objetivo correspondiente
+            # predictions_flat = logits.view(-1, num_classes)  # Shape: (batch_size * seq_length, num_classes)
+            # targets_flat = labels.view(-1)  # Shape: (batch_size * seq_length,)
+
+            # loss = F.cross_entropy(predictions_flat, targets_flat)
+            
+            batch_size, seq_length, num_classes = logits.size()
+            
+            # Verificar si las secuencias tienen la misma longitud
+            if seq_length != labels.size(1):
+                # Determinar cuál secuencia es más corta y cuál es más larga
+                if seq_length < labels.size(1):
+                    # Agregar tokens de relleno a las secuencias de logits
+                    padding_length = labels.size(1) - seq_length
+                    padding_tensor = torch.full((batch_size, padding_length, num_classes), 2, device=logits.device)
+                    logits = torch.cat([logits, padding_tensor], dim=1)
+                else:
+                    # Agregar tokens de relleno a las secuencias de targets
+                    padding_length = seq_length - labels.size(1)
+                    padding_tensor = torch.full((batch_size, padding_length), 2, dtype=torch.long, device=labels.device)
+                    labels = torch.cat([labels, padding_tensor], dim=1)
+
+            # Aplanar los tensores para poder comparar cada predicción con su objetivo correspondiente
+            predictions_flat = logits.view(-1, num_classes)  # Shape: (batch_size * seq_length, num_classes)
+            targets_flat = labels.view(-1)  # Shape: (batch_size * seq_length,)
+
+            # Calcular la función de pérdida
+            loss = F.cross_entropy(predictions_flat, targets_flat)
+            
         return CausalLMOutputWithPast(
             loss=loss,
-            logits=logits,
+            logits=logits_no_padding,
             past_key_values=(tuple(xattn_past_key_values), out.past_key_values) if use_cache else None,
             hidden_states=out.hidden_states,
             attentions=out.attentions,
@@ -328,7 +353,8 @@ class FlamingoGPT2(FlamingoBaseModel):
         assert self.config.dim == base_lm.config.n_embd, \
             f"specified {self.config.dim} in FlamingoConfig, but {config.lm} has hidden size={base_lm.config.n_embd}"
 
-        base_lm.resize_token_embeddings(base_lm.config.vocab_size + 6)
+        base_lm.resize_token_embeddings(base_lm.config.vocab_size + 1)
+        #base_lm.resize_token_embeddings(base_lm.config.vocab_size + 5)
         self.lm: GPT2Model = base_lm.transformer
         self.lm_head = base_lm.lm_head
         self._init_layers(self.lm.h)
@@ -353,7 +379,8 @@ class FlamingoOPT(FlamingoBaseModel):
         assert self.config.dim == base_lm.config.hidden_size, \
             f"specified {self.config.dim} in FlamingoConfig, but {config.lm} has hidden size={base_lm.config.hidden_size}"
 
-        base_lm.resize_token_embeddings(base_lm.config.vocab_size + 6)
+        base_lm.resize_token_embeddings(base_lm.config.vocab_size + 1)
+        #base_lm.resize_token_embeddings(base_lm.config.vocab_size + 5)
         self.lm: OPTModel = base_lm.model
         self.lm_head = base_lm.lm_head
         self._init_layers(self.lm.decoder.layers)
@@ -585,9 +612,9 @@ class FlamingoModel(PreTrainedModel):
         assert pixel_values is not None, "you must pass either images or visual features to generate_captions()!"
 
         batch_size = pixel_values.size(0)
-        input_ids, media_locations, attention_mask = processor.encode_text(
-            prompt, device)
-
+        
+        input_ids, media_locations, attention_mask = processor.encode_text(prompt, device)
+        #print(input_ids)
         input_ids = repeat(input_ids[0], 'l -> n l', n=batch_size)
         media_locations = repeat(media_locations[0], 'l -> n l', n=batch_size)
         attention_mask = repeat(attention_mask[0], 'l -> n l', n=batch_size)

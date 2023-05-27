@@ -107,7 +107,7 @@ def evaluate_image_captioning( #https://github.com/tylin/coco-caption/blob/maste
     # print(loader.dataset[0])
     
     for image_ids, pixels ,targets, labels in tqdm(loader):
-        print(len(image_ids),len(pixels))
+        # print(targets)
         captions = model.generate_captions(
             processor, 
             pixel_values=pixels.to(model.device),

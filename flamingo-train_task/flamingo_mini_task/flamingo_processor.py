@@ -36,11 +36,11 @@ class FlamingoProcessor:
             if use_fast:
                 from transformers import GPT2TokenizerFast
 
-                self.tokenizer = GPT2TokenizerFast.from_pretrained('gpt2')
+                self.tokenizer = GPT2TokenizerFast.from_pretrained('gpt2',padding_side='left')
             else:
                 from transformers import GPT2Tokenizer
 
-                self.tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
+                self.tokenizer = GPT2Tokenizer.from_pretrained('gpt2',padding_side='left')
         elif config.lm.startswith('facebook/opt'):
             from transformers import AutoTokenizer
             
@@ -48,7 +48,8 @@ class FlamingoProcessor:
         
         self.tokenizer.add_bos_token = True
         self.tokenizer.pad_token = self.tokenizer.eos_token
-        self.tokenizer.add_tokens([self.eoc_token,"[QA]","[COT]","[CONTEXT]","[QUESTION]","[OPTIONS]"])
+        self.tokenizer.add_tokens(self.eoc_token)
+        #self.tokenizer.add_tokens([self.eoc_token,"[QA]","[COT]","[CONTEXT]","[QUESTION]","[OPTIONS]"])
 
         # find the start token for "<image>". " <" is 1279, "<" is 27
         # the encoded "<" token-id is different if there is a preceding whitespace.
@@ -131,7 +132,8 @@ class FlamingoProcessor:
         self, 
         images: Image.Image | List[Image.Image] | torch.Tensor | List[torch.Tensor] | None = None, 
         text: str | List[str] | None = None, 
-        device: torch.device | None = None
+        device: torch.device | None = None,
+        max_length: int | None = None
     ):
         result = {}
         
@@ -139,7 +141,7 @@ class FlamingoProcessor:
             result['pixel_values'] = self.vision_processor(images=images, return_tensors='pt', padding=True)['pixel_values'].to(device)
             
         if text is not None:
-            input_ids, media_locations, attention_mask = self.encode_text(text, device=device)
+            input_ids, media_locations, attention_mask = self.encode_text(text, device=device,max_length=max_length)
             result['input_ids'] = input_ids
             result['media_locations'] = media_locations
             result['attention_mask'] = attention_mask
