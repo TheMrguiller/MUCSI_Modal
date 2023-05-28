@@ -107,7 +107,7 @@ def evaluate_image_captioning( #https://github.com/tylin/coco-caption/blob/maste
     # print(loader.dataset[0])
     
     for image_ids, pixels ,targets, labels in tqdm(loader):
-        # print(targets)
+        print(targets)
         captions = model.generate_captions(
             processor, 
             pixel_values=pixels.to(model.device),
@@ -118,9 +118,13 @@ def evaluate_image_captioning( #https://github.com/tylin/coco-caption/blob/maste
         # print(dataset.__getcaption__(image_ids))
         # captions.append(captions)
         # ref_captions.append(dataset.__getcaption__(image_ids))
+        print(captions)
         for image_id, caption,target,label in zip(image_ids.tolist(), captions,targets,labels):
             if "[QA]" in target:
                 #calculate accuracy
+                caption=caption.split("[ANSWER]")[1]
+                label=label.split("[ANSWER]")[1]
+                
                 accuracy_sum += calculate_accuracy(caption,label)
                 total_QA += 1
             if "[COT]" in target:

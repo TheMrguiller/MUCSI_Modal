@@ -286,6 +286,7 @@ class FlamingoBaseModel(ABC, PreTrainedModel):
 
         loss = None
         logits_no_padding = logits.clone()
+        
         if labels is not None:
             # # loss function calculation, inspired by hf implementations
             # # Shift so that tokens < n predict n
@@ -322,13 +323,36 @@ class FlamingoBaseModel(ABC, PreTrainedModel):
                     padding_length = seq_length - labels.size(1)
                     padding_tensor = torch.full((batch_size, padding_length), 2, dtype=torch.long, device=labels.device)
                     labels = torch.cat([labels, padding_tensor], dim=1)
+            # Obtener la longitud máxima entre las secuencias de salida y los labels
+            # Obtener la longitud máxima entre las secuencias de salida y los labels
+            # max_length = max(logits.size(1), labels.size(1))
 
-            # Aplanar los tensores para poder comparar cada predicción con su objetivo correspondiente
-            predictions_flat = logits.view(-1, num_classes)  # Shape: (batch_size * seq_length, num_classes)
-            targets_flat = labels.view(-1)  # Shape: (batch_size * seq_length,)
+            # # Aplicar padding a las secuencias de salida si es necesario
+            # if logits.size(1) < max_length:
+            #     padding_length = max_length - logits.size(1)
+            #     logits = F.pad(logits, (0, padding_length), value=2)
 
-            # Calcular la función de pérdida
-            loss = F.cross_entropy(predictions_flat, targets_flat)
+            # # Aplicar padding a los labels si es necesario
+            # if labels.size(1) < max_length:
+            #     padding_length = max_length - labels.size(1)
+            #     labels = F.pad(labels, (0, padding_length), value=2)
+
+            # # Calcular la pérdida de entropía cruzada
+            # loss = F.cross_entropy(logits.transpose(1, 2), labels.view(-1), reduction='mean')
+            shift_logits = logits[..., :-1, :].contiguous()
+            # labels shape (batch, seq_length)
+            shift_labels = labels[..., 1:].contiguous()
+
+            # Flatten the tokens
+            loss = F.cross_entropy(shift_logits.view(-1, shift_logits.size(-1)),
+                                   shift_labels.view(-1), reduction=loss_reduction)
+            # predictions_flat = logits.view(-1, num_classes)  # Shape: (batch_size * seq_length, num_classes)
+            # targets_flat = labels.view(-1)  # Shape: (batch_size * seq_length,)
+
+            # loss = F.cross_entropy(predictions_flat, targets_flat)
+
+            # # Calcular la función de pérdida
+            # loss = F.cross_entropy(predictions_flat, targets_flat)
             
         return CausalLMOutputWithPast(
             loss=loss,

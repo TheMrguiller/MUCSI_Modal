@@ -76,9 +76,9 @@ def prepare_evaluation_dataset_BilbaoQA(config: FlamingoConfig,dataset_path:List
     def target_transform(data):
         #Depending on the task we change the task token
         if data["solution"]!="":
-            return f"{random.choice(['', ' '])}[COT][CONTEXT]<image>{data['question']}{data['choices']}</s>"
+            return f"{random.choice(['', ' '])}[COT][CONTEXT]<image>{data['question']}{data['choices']}[ANSWER]</s>"
         else:
-            return f"{random.choice(['', ' '])}[QA][CONTEXT]<image>{data['question']}{data['choices']}</s>"
+            return f"{random.choice(['', ' '])}[QA][CONTEXT]<image>{data['question']}{data['choices']}[ANSWER]</s>"
 
     return BilbaoQA(dataset=dataset_path, 
         transform=CLIPImageTransform(config.clip_model_type),
