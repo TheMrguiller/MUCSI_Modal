@@ -59,6 +59,7 @@ def prepare_training_dataset_Bilbao(config: FlamingoConfig,dataset_path:List[str
         else:
             return f"{random.choice(['', ' '])}[QA][CONTEXT]<image>{data['question']}{data['choices']}[ANSWER]"
 
+
     return BilbaoQA(
         dataset=dataset_path,
         transform=transform,
@@ -79,6 +80,7 @@ def prepare_evaluation_dataset_BilbaoQA(config: FlamingoConfig,dataset_path:List
             return f"{random.choice(['', ' '])}[COT][CONTEXT]<image>{data['question']}{data['choices']}[ANSWER]"
         else:
             return f"{random.choice(['', ' '])}[QA][CONTEXT]<image>{data['question']}{data['choices']}[ANSWER]"
+
 
     return BilbaoQA(dataset=dataset_path, 
         transform=CLIPImageTransform(config.clip_model_type),
@@ -217,7 +219,10 @@ if __name__ == '__main__':
     #     resampler_act='sqrelu'
     # )
     # model = FlamingoModel(config)
+
     model = FlamingoModel.from_pretrained('TheMrguiller/Flamingo-tiny-Bilbao_Captions',ignore_mismatched_sizes=True)
+
+
     config=model.config
     # model.lm.
     print(f"Model config:{config}")
@@ -230,7 +235,7 @@ if __name__ == '__main__':
     #################################################################
     # datasets
     #################################################################
-    path = ["TheMrguiller/ScienceQA","TheMrguiller/BilbaoQA","TheMrguiller/BilbaoQA2"]
+    path = ["TheMrguiller/ScienceQA"]#,"TheMrguiller/BilbaoQA","TheMrguiller/BilbaoQA2"]
     
     logger.info('loading datasets...')
     train_dataset = prepare_training_dataset_Bilbao(config,path)
@@ -256,9 +261,10 @@ if __name__ == '__main__':
     # training loop
     #################################################################
     logger.info('start training.')
-    trainer.evaluate(eval_dataset)
     
     if training_args.resume_from_checkpoint is not None:
         trainer.train(training_args.resume_from_checkpoint)
     else:
         trainer.train()
+    
+    trainer.evaluate(eval_dataset)
