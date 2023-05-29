@@ -222,7 +222,6 @@ if __name__ == '__main__':
 
     model = FlamingoModel.from_pretrained('TheMrguiller/Flamingo-tiny-Bilbao_Captions',ignore_mismatched_sizes=True)
 
-
     config=model.config
     # model.lm.
     print(f"Model config:{config}")

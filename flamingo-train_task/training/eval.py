@@ -169,16 +169,16 @@ def evaluate_image_captioning( #https://github.com/tylin/coco-caption/blob/maste
     # rougue_metric=evaluate.load('rouge')
     # rouge_result=rougue_metric.compute(predictions=captions_COT, references=ref_captions_COT)
 
-    bleu_metric = evaluate.load("bleu")
-    try:
-        bleu_result = bleu_metric.compute(predictions=captions_COT, references=ref_captions_COT)
-    except:
-        bleu_result = {'bleu':0}
+    # bleu_metric = evaluate.load("bleu")
+    # try:
+    #     bleu_result = bleu_metric.compute(predictions=captions_COT, references=ref_captions_COT)
+    # except:
+    #     bleu_result = {'bleu':0}
 
-    meteor_metric = evaluate.load('meteor')
-    meteor_result=meteor_metric.compute(predictions=captions_COT, references=ref_captions_COT)
-    rougue_metric=evaluate.load('rouge')
-    rouge_result=rougue_metric.compute(predictions=captions_COT, references=ref_captions_COT)
+    # meteor_metric = evaluate.load('meteor')
+    # meteor_result=meteor_metric.compute(predictions=captions_COT, references=ref_captions_COT)
+    # rougue_metric=evaluate.load('rouge')
+    # rouge_result=rougue_metric.compute(predictions=captions_COT, references=ref_captions_COT)
 
     accuracy_score = accuracy_sum/total_QA
     # coco_result = dataset.coco.loadRes(results)
