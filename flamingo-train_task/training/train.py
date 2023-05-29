@@ -235,7 +235,7 @@ if __name__ == '__main__':
     # datasets
     #################################################################
     path = ["TheMrguiller/ScienceQA"]#,"TheMrguiller/BilbaoQA","TheMrguiller/BilbaoQA2"]
-    
+    # path = ["TheMrguiller/ScienceQA","TheMrguiller/BilbaoQA","TheMrguiller/BilbaoQA2"]
     logger.info('loading datasets...')
     train_dataset = prepare_training_dataset_Bilbao(config,path)
     eval_dataset = prepare_evaluation_dataset_BilbaoQA(config,path,split_name="test")

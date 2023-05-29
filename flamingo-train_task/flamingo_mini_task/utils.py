@@ -168,10 +168,8 @@ class BilbaoQA(data.Dataset):
 
         if self.target_transform is not None:
             target = self.target_transform(target)
-
-        #target = target.split("</s>")[0]
-        #label = target + label +"</s>"
-        label = target + label + "[EOC]</s>"
+        #print(label)
+        label = target + label +"<EOC></s>"
         return img, target, label
     
     def __getcaption__(self,index):
