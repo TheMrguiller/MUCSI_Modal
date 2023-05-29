@@ -55,9 +55,9 @@ def prepare_training_dataset_Bilbao(config: FlamingoConfig,dataset_path:List[str
     def target_transform(data):
         #Depending on the task we change the task token
         if data["answer"]=="":
-            return f"{random.choice(['', ' '])}[COT][CONTEXT]<image>{data['question']}{data['choices']}<EOC></s>"
+            return f"{random.choice(['', ' '])}[COT][CONTEXT]<image>{data['question']}{data['choices']}[ANSWER]"
         else:
-            return f"{random.choice(['', ' '])}[QA][CONTEXT]<image>{data['question']}{data['choices']}<EOC></s>"
+            return f"{random.choice(['', ' '])}[QA][CONTEXT]<image>{data['question']}{data['choices']}[ANSWER]"
 
     return BilbaoQA(
         dataset=dataset_path,
@@ -75,10 +75,10 @@ def prepare_evaluation_dataset_Bilbao(config: FlamingoConfig,dataset_path:List[s
 def prepare_evaluation_dataset_BilbaoQA(config: FlamingoConfig,dataset_path:List[str],split_name="train"):
     def target_transform(data):
         #Depending on the task we change the task token
-        if data["solution"]!="":
-            return f"{random.choice(['', ' '])}[COT][CONTEXT]<image>{data['question']}{data['choices']}[ANSWER]</s>"
+        if data["answer"]=="":
+            return f"{random.choice(['', ' '])}[COT][CONTEXT]<image>{data['question']}{data['choices']}[ANSWER]"
         else:
-            return f"{random.choice(['', ' '])}[QA][CONTEXT]<image>{data['question']}{data['choices']}[ANSWER]</s>"
+            return f"{random.choice(['', ' '])}[QA][CONTEXT]<image>{data['question']}{data['choices']}[ANSWER]"
 
     return BilbaoQA(dataset=dataset_path, 
         transform=CLIPImageTransform(config.clip_model_type),
@@ -118,7 +118,7 @@ class DataCollatorQA:
         return dict(
             pixel_values=pixel_values,
             labels=label['input_ids'],
-            **inputs
+            **label
         )
 
 @dataclass
@@ -135,7 +135,7 @@ class FlamingoTrainer(Trainer):
     model: FlamingoModel
     processor: FlamingoProcessor
     eval_dataset: BilbaoQA
-    
+    @torch.no_grad()
     def evaluate(self,
         eval_dataset: Optional[Dataset] = None,
         ignore_keys: Optional[List[str]] = None,
@@ -217,7 +217,7 @@ if __name__ == '__main__':
     #     resampler_act='sqrelu'
     # )
     # model = FlamingoModel(config)
-    model = FlamingoModel.from_pretrained('TheMrguiller/Flamingo-mini-Bilbao_Captions',ignore_mismatched_sizes=True)
+    model = FlamingoModel.from_pretrained('TheMrguiller/Flamingo-tiny-Bilbao_Captions',ignore_mismatched_sizes=True)
     config=model.config
     # model.lm.
     print(f"Model config:{config}")

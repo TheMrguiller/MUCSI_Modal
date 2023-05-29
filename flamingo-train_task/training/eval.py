@@ -115,14 +115,17 @@ def evaluate_image_captioning( #https://github.com/tylin/coco-caption/blob/maste
             prompt=target,
             device=device
             )
-            print(target)
+            pixel.to("cpu")
+            
+            label = label.replace("<image>","")
+            label = label.replace("<EOC></s>","")
+            caption=caption[0].split("[ANSWER]")[1].strip()
+            label=label.split("[ANSWER]")[1]
             print(caption)
             print(label)
             if "[QA]" in target:
                 #calculate accuracy
-                caption=caption[0].split("[ANSWER]")[1]
-                label=label.split("[ANSWER]")[1]
-                
+            
                 accuracy_sum += calculate_accuracy(caption,label)
                 total_QA += 1
             if "[COT]" in target:
@@ -145,12 +148,12 @@ def evaluate_image_captioning( #https://github.com/tylin/coco-caption/blob/maste
     # spice_result,_=spice_metric.compute_score(gts=gts,res=res)
 
     #Evaluate based in meteor,rouge.Novel metrics cider y spider
-    bleu_metric = evaluate.load("bleu")
-    bleu_result = bleu_metric.compute(predictions=captions_COT, references=ref_captions_COT)
-    meteor_metric = evaluate.load('meteor')
-    meteor_result=meteor_metric.compute(predictions=captions_COT, references=ref_captions_COT)
-    rougue_metric=evaluate.load('rouge')
-    rouge_result=rougue_metric.compute(predictions=captions_COT, references=ref_captions_COT)
+    # bleu_metric = evaluate.load("bleu")
+    # bleu_result = bleu_metric.compute(predictions=captions_COT, references=ref_captions_COT)
+    # meteor_metric = evaluate.load('meteor')
+    # meteor_result=meteor_metric.compute(predictions=captions_COT, references=ref_captions_COT)
+    # rougue_metric=evaluate.load('rouge')
+    # rouge_result=rougue_metric.compute(predictions=captions_COT, references=ref_captions_COT)
     accuracy_score = accuracy_sum/total_QA
     # coco_result = dataset.coco.loadRes(results)
     # coco_eval = COCOEvalCap(dataset.coco, coco_result)
@@ -158,7 +161,8 @@ def evaluate_image_captioning( #https://github.com/tylin/coco-caption/blob/maste
     # coco_eval.evaluate()
     # result = {"Bleu":bleu_result["bleu"],"Meteor":meteor_result["meteor"],"Rouge":rouge_result["rougeL"],"CIDEr":cider_result,"SPICE":spice_result}
     # result = {"Bleu":bleu_result["bleu"],"Meteor":meteor_result["meteor"],"Rouge":rouge_result["rougeL"],"CIDEr":cider_result}
-    result = {"Bleu":bleu_result["bleu"],"Meteor":meteor_result["meteor"],"Rouge":rouge_result["rougeL"],"Accuracy_score":accuracy_score}
+    # result = {"Bleu":bleu_result["bleu"],"Meteor":meteor_result["meteor"],"Rouge":rouge_result["rougeL"],"Accuracy_score":accuracy_score}
+    result = {"Accuracy_score":accuracy_score}
 
     return result
 

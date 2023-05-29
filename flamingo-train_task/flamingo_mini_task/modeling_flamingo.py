@@ -308,21 +308,21 @@ class FlamingoBaseModel(ABC, PreTrainedModel):
 
             # loss = F.cross_entropy(predictions_flat, targets_flat)
             
-            batch_size, seq_length, num_classes = logits.size()
+            # batch_size, seq_length, num_classes = logits.size()
             
-            # Verificar si las secuencias tienen la misma longitud
-            if seq_length != labels.size(1):
-                # Determinar cuál secuencia es más corta y cuál es más larga
-                if seq_length < labels.size(1):
-                    # Agregar tokens de relleno a las secuencias de logits
-                    padding_length = labels.size(1) - seq_length
-                    padding_tensor = torch.full((batch_size, padding_length, num_classes), 2, device=logits.device)
-                    logits = torch.cat([logits, padding_tensor], dim=1)
-                else:
-                    # Agregar tokens de relleno a las secuencias de targets
-                    padding_length = seq_length - labels.size(1)
-                    padding_tensor = torch.full((batch_size, padding_length), 2, dtype=torch.long, device=labels.device)
-                    labels = torch.cat([labels, padding_tensor], dim=1)
+            # # Verificar si las secuencias tienen la misma longitud
+            # if seq_length != labels.size(1):
+            #     # Determinar cuál secuencia es más corta y cuál es más larga
+            #     if seq_length < labels.size(1):
+            #         # Agregar tokens de relleno a las secuencias de logits
+            #         padding_length = labels.size(1) - seq_length
+            #         padding_tensor = torch.full((batch_size, padding_length, num_classes), 2, device=logits.device)
+            #         logits = torch.cat([logits, padding_tensor], dim=1)
+            #     else:
+            #         # Agregar tokens de relleno a las secuencias de targets
+            #         padding_length = seq_length - labels.size(1)
+            #         padding_tensor = torch.full((batch_size, padding_length), 2, dtype=torch.long, device=labels.device)
+            #         labels = torch.cat([labels, padding_tensor], dim=1)
             # Obtener la longitud máxima entre las secuencias de salida y los labels
             # Obtener la longitud máxima entre las secuencias de salida y los labels
             # max_length = max(logits.size(1), labels.size(1))

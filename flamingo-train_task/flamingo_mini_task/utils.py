@@ -128,10 +128,10 @@ class BilbaoQA(data.Dataset):
         self.new_size = (224, 224)
         self._resize_images(self.new_size)
         ## Duplicate those entries that have chainofthought in it in order to train in both task, and put the answer in blank
-        self.datasetcot= self.dataset.filter(lambda value: value["CTH"]==False)
-        #self.datasetcot=self.datasetcot.map(self.blank_proccess) #Ponemos en blanco para utilizarlo como flag
-        self.dataset = concatenate_datasets([self.dataset,self.datasetcot])
-        print(f"Total QA and COT:{self.dataset}")
+        # self.datasetcot= self.dataset.filter(lambda value: value["CTH"]==False)
+        # self.datasetcot=self.datasetcot.map(self.blank_proccess) #Ponemos en blanco para utilizarlo como flag
+        # self.dataset = concatenate_datasets([self.dataset,self.datasetcot])
+        # print(f"Total QA and COT:{self.dataset}")
         self.dataset=self.dataset.shuffle(seed=42)
         self.images= np.array([ image for image in tqdm(self.dataset["image"])],dtype=object)
     
@@ -157,10 +157,10 @@ class BilbaoQA(data.Dataset):
         
         
         target = self.dataset[index]
-        if self.dataset["solution"][index]!="":
+        if self.dataset["answer"][index]=="":
             label = self.dataset["solution"][index].replace("\n","")
         else:
-            label = self.dataset["answer"][index]
+            label = self.dataset["answer"][index].replace("\n","")
         # img = self.dataset["image"][index]
         img = self.images[index]
         if self.transform is not None:
@@ -170,7 +170,7 @@ class BilbaoQA(data.Dataset):
             target = self.target_transform(target)
         #print(label)
         target = target.split("</s>")[0]
-        label = target + label +"</s>"
+        label = target + label +"<EOC></s>"
         return img, target, label
     
     def __getcaption__(self,index):
