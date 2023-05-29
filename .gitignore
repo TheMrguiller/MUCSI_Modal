@@ -147,3 +147,4 @@ flamingo-megatiny/training/flamingo-coco-opt-vizwiz/*
 flamingo-megatiny/training/imgs_test/*
 flamingo-megatiny/datasets/
 flamingo-megatiny/training/flamingo-coco-opt-vizwiz-domain/*
+flamingo-train_task/training/flamingo-Bilbao/*

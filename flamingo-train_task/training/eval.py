@@ -115,9 +115,13 @@ def evaluate_image_captioning( #https://github.com/tylin/coco-caption/blob/maste
             prompt=target,
             device=device
             )
+            print("--------------------- TARGET -----------------------")
             print(target)
+            print("--------------------- CAPTION -----------------------")
             print(caption)
+            print("--------------------- LABEL -----------------------")
             print(label)
+
             if "[QA]" in target:
                 #calculate accuracy
                 caption=caption[0].split("[ANSWER]")[1]
@@ -126,9 +130,14 @@ def evaluate_image_captioning( #https://github.com/tylin/coco-caption/blob/maste
                 accuracy_sum += calculate_accuracy(caption,label)
                 total_QA += 1
             if "[COT]" in target:
-                captions_COT.append(caption[0])
+                caption = caption[0].split("[ANSWER]")[1]
+                label=label.split("[ANSWER]")[1]
+
+                captions_COT.append(caption)
                 ref_captions_COT.append(label)
     
+
+
             # print(caption)
             # print(image_id)
             # gts[image_id]= {"caption":caption}
@@ -146,7 +155,11 @@ def evaluate_image_captioning( #https://github.com/tylin/coco-caption/blob/maste
 
     #Evaluate based in meteor,rouge.Novel metrics cider y spider
     bleu_metric = evaluate.load("bleu")
-    bleu_result = bleu_metric.compute(predictions=captions_COT, references=ref_captions_COT)
+    try:
+        bleu_result = bleu_metric.compute(predictions=captions_COT, references=ref_captions_COT)
+    except:
+        bleu_result = {'bleu':0}
+
     meteor_metric = evaluate.load('meteor')
     meteor_result=meteor_metric.compute(predictions=captions_COT, references=ref_captions_COT)
     rougue_metric=evaluate.load('rouge')
