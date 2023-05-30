@@ -102,8 +102,7 @@ def prepare_evaluation_dataset_VQAv2(config: FlamingoConfig):
     ])
     
     def target_transform(data):
-            print(data)
-            return f"{random.choice(['', ' '])}[QA][CONTEXT]<image>{random.choice(data)}[ANSWER]"
+            return f"{random.choice(['', ' '])}[QA][CONTEXT]<image>{data}[ANSWER]"
     
     return VQAv2(
         image_folder=VQAV2_ROOT,
