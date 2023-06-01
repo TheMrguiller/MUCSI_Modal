@@ -23,7 +23,7 @@ from transformers.optimization import get_constant_schedule_with_warmup
 from flamingo_mini_task import FlamingoConfig, FlamingoModel, FlamingoProcessor
 
 from eval import evaluate_image_captioning  # don't ask me why this import works
-from flamingo_mini_task.utils import BilbaoCaptions,BilbaoQA
+from flamingo_mini_task.utils import BilbaoCaptions,BilbaoQA,VQAv2
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +32,11 @@ logger = logging.getLogger(__name__)
 COCO_ROOT      = '/nfs/data3/zhangya/coco2017/images'
 COCO_ANN_TRAIN = '/nfs/data3/hansmair/coco2017/captions_train2017.json'
 COCO_ANN_VAL   = '/nfs/data3/hansmair/coco2017/captions_val2017.json'
+
+# get images and annotations from https://visualqa.org/download.html
+VQAV2_ROOT = 'VQAV2/val2014'
+VQAV2_ANN_QUEST_VAL = 'VQAV2/v2_OpenEnded_mscoco_val2014_questions.json'
+VQAV2_ANN_VAL = 'VQAV2/v2_mscoco_val2014_annotations.json'
 
 
 class CLIPImageTransform:
@@ -87,6 +92,27 @@ def prepare_evaluation_dataset_BilbaoQA(config: FlamingoConfig,dataset_path:List
         target_transform=target_transform,
         split_name=split_name,cot=cot)
 
+       
+def prepare_evaluation_dataset_VQAv2(config: FlamingoConfig):
+    
+    transform = T.Compose([ #Con cierta probabilidad da la vuelta a la imagen y procesa la imagen con Clip
+        T.Resize((224, 224)),
+        T.RandomHorizontalFlip(),                       
+        CLIPImageTransform(config.clip_model_type)
+    ])
+    
+    def target_transform(data):
+            return f"{random.choice(['', ' '])}[QA][CONTEXT]<image>{data}[ANSWER]"
+    
+    return VQAv2(
+        image_folder=VQAV2_ROOT,
+        questions_file=VQAV2_ANN_QUEST_VAL,
+        annotations_file=VQAV2_ANN_VAL,
+        transform=transform,
+        target_transform=target_transform,
+    )
+
+
 class DataCollator:
     def __init__(self, config: FlamingoConfig):
         self.processor = FlamingoProcessor(config)
@@ -136,7 +162,8 @@ class FlamingoTrainer(Trainer):
     args: FlamingoTrainingArguments
     model: FlamingoModel
     processor: FlamingoProcessor
-    eval_dataset: BilbaoQA
+    #eval_dataset: BilbaoQA
+    eval_dataset: VQAv2
     @torch.no_grad()
     def evaluate(self,
         eval_dataset: Optional[Dataset] = None,
@@ -220,10 +247,11 @@ if __name__ == '__main__':
     # )
     # model = FlamingoModel(config)
 
+
     # model = FlamingoModel.from_pretrained('TheMrguiller/Flamingo-mini-Bilbao_Captions',ignore_mismatched_sizes=True)
     model = FlamingoModel.from_pretrained('dhansmair/flamingo-tiny',ignore_mismatched_sizes=True)
 
-    
+   
     config=model.config
     # model.lm.
     print(f"Model config:{config}")
@@ -239,9 +267,9 @@ if __name__ == '__main__':
     path = ["TheMrguiller/ScienceQA"]#,"TheMrguiller/BilbaoQA","TheMrguiller/BilbaoQA2"]
     # path = ["TheMrguiller/ScienceQA","TheMrguiller/BilbaoQA","TheMrguiller/BilbaoQA2"]
     logger.info('loading datasets...')
+
     train_dataset = prepare_evaluation_dataset_BilbaoQA(config,path,cot=True)
     eval_dataset = prepare_evaluation_dataset_BilbaoQA(config,path,split_name="test",cot=True)
-    
     #################################################################
     # optimizer, scheduler, trainer
     #################################################################
@@ -262,10 +290,12 @@ if __name__ == '__main__':
     # training loop
     #################################################################
     logger.info('start training.')
-    
+
     if training_args.resume_from_checkpoint is not None:
         trainer.train(training_args.resume_from_checkpoint)
     else:
         trainer.train()
     
-    
+
+    trainer.evaluate(eval_dataset)
+ 

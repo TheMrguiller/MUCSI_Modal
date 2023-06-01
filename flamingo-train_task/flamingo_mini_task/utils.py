@@ -10,6 +10,9 @@ from datasets import load_dataset,concatenate_datasets
 from typing import List
 from tqdm import tqdm
 import numpy as np
+import json
+import os
+
 def load_url(url: str):
     return Image.open(requests.get(url, stream=True).raw)
 
@@ -177,4 +180,39 @@ class BilbaoQA(data.Dataset):
         return self.dataset["answer"][index]
     def __len__(self):
         return len(self.dataset)
+
+
+class VQAv2(data.Dataset):
+    def __init__(self, image_folder, questions_file, annotations_file, transform=None, target_transform=None):
+        self.image_folder = image_folder
+        self.questions = json.load(open(questions_file))['questions']
+        self.annotations = json.load(open(annotations_file))['annotations']
+        self.transform = transform
+        self.target_transform = target_transform
+          
+    def __getitem__(self, index):
+        target = self.questions[index]['question']
+        label = self.annotations[index]['multiple_choice_answer']
+        image_id = self.annotations[index]['image_id']
+        image_path = os.path.join(self.image_folder, 'COCO_val2014_' + str(image_id).zfill(12) + '.jpg')
+        image = Image.open(image_path).convert('RGB')
+        
+        if self.transform is not None:
+            image = self.transform(image)
+        
+        if self.target_transform is not None:
+            target = self.target_transform(target)
+        
+        label = target + label +"<EOC></s>"
+        return image, target, label
+
+    
+    def __getcaption__(self,index):
+        return self.questions["question"][index]
+    
+    def __getanswer__(self,index):
+        return self.annotations["answer"][index]
+    
+    def __len__(self):
+        return len(self.questions)
 
