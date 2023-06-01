@@ -137,8 +137,7 @@ def evaluate_image_captioning( #https://github.com/tylin/coco-caption/blob/maste
                 accuracy_sum += calculate_accuracy(caption,label)
                 total_QA += 1
             if "[COT]" in target:
-                caption = caption[0].split("[ANSWER]")[1]
-                label=label.split("[ANSWER]")[1]
+                
 
                 captions_COT.append(caption)
                 ref_captions_COT.append(label)
@@ -161,34 +160,17 @@ def evaluate_image_captioning( #https://github.com/tylin/coco-caption/blob/maste
     # spice_result,_=spice_metric.compute_score(gts=gts,res=res)
 
     #Evaluate based in meteor,rouge.Novel metrics cider y spider
-
-    # bleu_metric = evaluate.load("bleu")
-    # bleu_result = bleu_metric.compute(predictions=captions_COT, references=ref_captions_COT)
-    # meteor_metric = evaluate.load('meteor')
-    # meteor_result=meteor_metric.compute(predictions=captions_COT, references=ref_captions_COT)
-    # rougue_metric=evaluate.load('rouge')
-    # rouge_result=rougue_metric.compute(predictions=captions_COT, references=ref_captions_COT)
-
-    # bleu_metric = evaluate.load("bleu")
-    # try:
-    #     bleu_result = bleu_metric.compute(predictions=captions_COT, references=ref_captions_COT)
-    # except:
-    #     bleu_result = {'bleu':0}
-
-    # meteor_metric = evaluate.load('meteor')
-    # meteor_result=meteor_metric.compute(predictions=captions_COT, references=ref_captions_COT)
-    # rougue_metric=evaluate.load('rouge')
-    # rouge_result=rougue_metric.compute(predictions=captions_COT, references=ref_captions_COT)
-
     accuracy_score = accuracy_sum/total_QA
-    # coco_result = dataset.coco.loadRes(results)
-    # coco_eval = COCOEvalCap(dataset.coco, coco_result)
-    # coco_eval.params['image_id'] = coco_result.getImgIds()
-    # coco_eval.evaluate()
-    # result = {"Bleu":bleu_result["bleu"],"Meteor":meteor_result["meteor"],"Rouge":rouge_result["rougeL"],"CIDEr":cider_result,"SPICE":spice_result}
-    # result = {"Bleu":bleu_result["bleu"],"Meteor":meteor_result["meteor"],"Rouge":rouge_result["rougeL"],"CIDEr":cider_result}
-    # result = {"Bleu":bleu_result["bleu"],"Meteor":meteor_result["meteor"],"Rouge":rouge_result["rougeL"],"Accuracy_score":accuracy_score}
-    result = {"Accuracy_score":accuracy_score}
-
+    if not captions_COT:
+        result = {"Accuracy_score":accuracy_score}
+    else:
+        bleu_metric = evaluate.load("bleu")
+        bleu_result = bleu_metric.compute(predictions=captions_COT, references=ref_captions_COT)
+        meteor_metric = evaluate.load('meteor')
+        meteor_result=meteor_metric.compute(predictions=captions_COT, references=ref_captions_COT)
+        rougue_metric=evaluate.load('rouge')
+        rouge_result=rougue_metric.compute(predictions=captions_COT, references=ref_captions_COT)
+        result = {"Bleu":bleu_result["bleu"],"Meteor":meteor_result["meteor"],"Rouge":rouge_result["rougeL"],"Accuracy_score":accuracy_score}
+    
     return result
 

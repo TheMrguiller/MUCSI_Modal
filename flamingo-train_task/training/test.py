@@ -4,20 +4,22 @@ from flamingo_mini_task.utils import load_url
 from flamingo_mini_task import FlamingoModel, FlamingoProcessor
 from datasets import load_dataset,concatenate_datasets
 from train import prepare_evaluation_dataset_BilbaoQA
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-model = FlamingoModel.from_pretrained('/home/d4k/Documents/guillermo/MUCSI_Modal/flamingo-train_task/training/flamingo-Bilbao/checkpoint-1469')
+device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
+model = FlamingoModel.from_pretrained('/home/d4k/Documents/guillermo/MUCSI_Modal/flamingo-train_task/training/flamingo-Bilbao/checkpoint-8991')
 
 model.to(device)
 model.eval()
 processor = FlamingoProcessor(model.config)
-# model.push_to_hub("TheMrguiller/Flamingo-mini-Bilbao_Captions")
-# dataset=load_dataset("landersanmi/BilbaoCaptions2",)
+# model.push_to_hub("TheMrguiller/Flamingo-mini-task_ScienceQA_BilbaoQA")
+# # dataset=load_dataset("landersanmi/BilbaoCaptions2",)
 # dataset=load_dataset("TheMrguiller/ScienceQA")
-dataset=prepare_evaluation_dataset_BilbaoQA(model.config,["TheMrguiller/ScienceQA"],"train")
-img, target, label=dataset[1]
-img=dataset.dataset["image"][1]
+dataset=prepare_evaluation_dataset_BilbaoQA(model.config,["TheMrguiller/ScienceQA"],"test")
+img, target, label=dataset[95]
+img=dataset.dataset["image"][95]
 print('ref question:')
 print(target)
+print("label")
+print(label)
 print('ref caption:')
 print(label)
 plt.imshow(img)
@@ -26,7 +28,9 @@ caption = model.generate_captions(processor, images=img,prompt=target)
 print('generated caption:')
 print(caption)
 
-
+caption = model.generate_captions(processor, images=img,prompt="<image>")
+print('generated caption:')
+print(caption)
 # caption = model.generate_captions(processor, images=[dataset["test"]["image"][0]])
 # print('generated caption:')
 # print(caption)

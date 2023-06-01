@@ -110,7 +110,7 @@ class BilbaoCaptions(data.Dataset):
     
 class BilbaoQA(data.Dataset):
     #Clase parecida al de COCO pero adaptada a nuestro formato
-    def __init__(self, dataset:List[str],split_name:str,transform=None,target_transform=None):
+    def __init__(self, dataset:List[str],split_name:str,transform=None,target_transform=None,cot:bool=False):
         lista_datasets=[]
         for idx,path in enumerate(dataset):
             lista_datasets.append(load_dataset(path,split=split_name))
@@ -127,11 +127,12 @@ class BilbaoQA(data.Dataset):
         self.target_transform = target_transform
         self.new_size = (224, 224)
         self._resize_images(self.new_size)
-        ## Duplicate those entries that have chainofthought in it in order to train in both task, and put the answer in blank
-        # self.datasetcot= self.dataset.filter(lambda value: value["CTH"]==False)
-        # self.datasetcot=self.datasetcot.map(self.blank_proccess) #Ponemos en blanco para utilizarlo como flag
-        # self.dataset = concatenate_datasets([self.dataset,self.datasetcot])
-        # print(f"Total QA and COT:{self.dataset}")
+        if cot ==True:
+            # Duplicate those entries that have chainofthought in it in order to train in both task, and put the answer in blank
+            self.datasetcot= self.dataset.filter(lambda value: value["CTH"]==False)
+            self.datasetcot=self.datasetcot.map(self.blank_proccess) #Ponemos en blanco para utilizarlo como flag
+            self.dataset = concatenate_datasets([self.dataset,self.datasetcot])
+            print(f"Total QA and COT:{self.dataset}")
         self.dataset=self.dataset.shuffle(seed=42)
         self.images= np.array([ image for image in tqdm(self.dataset["image"])],dtype=object)
     
@@ -145,8 +146,6 @@ class BilbaoQA(data.Dataset):
             resized_image = image.resize(new_size)
             data_point['image'] = resized_image  
                   
-		
-
     def __getitem__(self, index):
         """
         Args:
@@ -178,3 +177,4 @@ class BilbaoQA(data.Dataset):
         return self.dataset["answer"][index]
     def __len__(self):
         return len(self.dataset)
+

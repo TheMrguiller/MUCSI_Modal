@@ -73,7 +73,7 @@ def prepare_evaluation_dataset_Bilbao(config: FlamingoConfig,dataset_path:List[s
         transform=CLIPImageTransform(config.clip_model_type),
         
         split_name="test")
-def prepare_evaluation_dataset_BilbaoQA(config: FlamingoConfig,dataset_path:List[str],split_name="train"):
+def prepare_evaluation_dataset_BilbaoQA(config: FlamingoConfig,dataset_path:List[str],split_name="train",cot=False):
     def target_transform(data):
         #Depending on the task we change the task token
         if data["answer"]=="":
@@ -85,7 +85,7 @@ def prepare_evaluation_dataset_BilbaoQA(config: FlamingoConfig,dataset_path:List
     return BilbaoQA(dataset=dataset_path, 
         transform=CLIPImageTransform(config.clip_model_type),
         target_transform=target_transform,
-        split_name=split_name)
+        split_name=split_name,cot=cot)
 
 class DataCollator:
     def __init__(self, config: FlamingoConfig):
@@ -220,8 +220,10 @@ if __name__ == '__main__':
     # )
     # model = FlamingoModel(config)
 
-    model = FlamingoModel.from_pretrained('TheMrguiller/Flamingo-tiny-Bilbao_Captions',ignore_mismatched_sizes=True)
+    # model = FlamingoModel.from_pretrained('TheMrguiller/Flamingo-mini-Bilbao_Captions',ignore_mismatched_sizes=True)
+    model = FlamingoModel.from_pretrained('dhansmair/flamingo-tiny',ignore_mismatched_sizes=True)
 
+    
     config=model.config
     # model.lm.
     print(f"Model config:{config}")
@@ -237,8 +239,8 @@ if __name__ == '__main__':
     path = ["TheMrguiller/ScienceQA"]#,"TheMrguiller/BilbaoQA","TheMrguiller/BilbaoQA2"]
     # path = ["TheMrguiller/ScienceQA","TheMrguiller/BilbaoQA","TheMrguiller/BilbaoQA2"]
     logger.info('loading datasets...')
-    train_dataset = prepare_training_dataset_Bilbao(config,path)
-    eval_dataset = prepare_evaluation_dataset_BilbaoQA(config,path,split_name="test")
+    train_dataset = prepare_evaluation_dataset_BilbaoQA(config,path,cot=True)
+    eval_dataset = prepare_evaluation_dataset_BilbaoQA(config,path,split_name="test",cot=True)
     
     #################################################################
     # optimizer, scheduler, trainer
@@ -255,7 +257,7 @@ if __name__ == '__main__':
         #compute_metrics=compute_metrics,
         # optimizers=(optimizer, scheduler)
     )
-
+    trainer.evaluate(eval_dataset)
     #################################################################
     # training loop
     #################################################################
@@ -266,4 +268,4 @@ if __name__ == '__main__':
     else:
         trainer.train()
     
-    trainer.evaluate(eval_dataset)
+    
