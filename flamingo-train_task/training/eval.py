@@ -123,13 +123,13 @@ def evaluate_image_captioning( #https://github.com/tylin/coco-caption/blob/maste
             caption=caption[0].split("[ANSWER]")[1].strip()
             label=label.split("[ANSWER]")[1]
 
-            print("--------------------- TARGET -----------------------")
-            print(target)
-            print("--------------------- CAPTION -----------------------")
+            # print("--------------------- TARGET -----------------------")
+            # print(target)
+            # print("--------------------- CAPTION -----------------------")
 
-            print(caption)
-            print("--------------------- LABEL -----------------------")
-            print(label)
+            # print(caption)
+            # print("--------------------- LABEL -----------------------")
+            # print(label)
 
             if "[QA]" in target:
                 #calculate accuracy

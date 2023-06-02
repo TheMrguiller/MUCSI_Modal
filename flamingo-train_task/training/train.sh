@@ -5,7 +5,7 @@ NUM_GPU=1
 
 ARGS="
 --output_dir ./flamingo-Bilbao
---run_name flamingo-mini-vitL_task
+--run_name TheMrguiller/Flamingo-tiny_ScienceQA_COT
 --do_train --do_eval
 --optim adamw_torch
 --learning_rate 0.0001 

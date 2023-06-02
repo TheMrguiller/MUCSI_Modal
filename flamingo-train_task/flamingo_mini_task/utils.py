@@ -113,14 +113,16 @@ class BilbaoCaptions(data.Dataset):
     
 class BilbaoQA(data.Dataset):
     #Clase parecida al de COCO pero adaptada a nuestro formato
-    def __init__(self, dataset:List[str],split_name:str,transform=None,target_transform=None,cot:bool=False):
+    def __init__(self, dataset:List[str],split_name,transform=None,target_transform=None,cot:bool=False):
         lista_datasets=[]
         for idx,path in enumerate(dataset):
             lista_datasets.append(load_dataset(path,split=split_name))
             #if idx >0:
                 #assert lista_datasets[idx-1].features.type == lista_datasets[idx].features.type
-          
-        self.dataset=concatenate_datasets(lista_datasets)
+        if len(lista_datasets) >1:
+            self.dataset=concatenate_datasets(lista_datasets)
+        else:
+            self.dataset = lista_datasets[0]
         ##Eliminate those lines which doesnt have data in it
         print(f"Before preprocessing:{self.dataset}")
         self.dataset = self.dataset.filter(lambda value: value["question"]!="")
@@ -180,6 +182,7 @@ class BilbaoQA(data.Dataset):
         return self.dataset["answer"][index]
     def __len__(self):
         return len(self.dataset)
+        
 
 
 class VQAv2(data.Dataset):

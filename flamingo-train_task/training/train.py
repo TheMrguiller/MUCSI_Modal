@@ -162,8 +162,8 @@ class FlamingoTrainer(Trainer):
     args: FlamingoTrainingArguments
     model: FlamingoModel
     processor: FlamingoProcessor
-    #eval_dataset: BilbaoQA
-    eval_dataset: VQAv2
+    eval_dataset: BilbaoQA
+    # eval_dataset: VQAv2
     @torch.no_grad()
     def evaluate(self,
         eval_dataset: Optional[Dataset] = None,
