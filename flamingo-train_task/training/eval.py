@@ -1,16 +1,18 @@
-from typing import Optional, List, Dict
-from tqdm import tqdm
+from typing import Dict, List, Optional
 
-import torch
-from torch.utils.data import Dataset, Subset, DataLoader
-from torchvision.datasets import CocoCaptions
-# from pycocoevalcap.eval import COCOEvalCap
-from flamingo_mini_task.utils import BilbaoCaptions,BilbaoQA
-from flamingo_mini_task import FlamingoModel, FlamingoProcessor
 import evaluate
-from pycocoevalcap.tokenizer.ptbtokenizer import PTBTokenizer
+import torch
+from flamingo_mini_task import FlamingoModel, FlamingoProcessor
+# from pycocoevalcap.eval import COCOEvalCap
+from flamingo_mini_task.utils import BilbaoCaptions, BilbaoQA
 from pycocoevalcap.cider.cider import Cider
 from pycocoevalcap.spice.spice import Spice
+from pycocoevalcap.tokenizer.ptbtokenizer import PTBTokenizer
+from torch.utils.data import DataLoader, Dataset, Subset
+from torchvision.datasets import CocoCaptions
+from tqdm import tqdm
+
+
 class MyDatasetWrapper(Dataset):
 
     def __init__(self, dataset):
@@ -120,13 +122,12 @@ def evaluate_image_captioning( #https://github.com/tylin/coco-caption/blob/maste
             
             label = label.replace("<image>","")
             label = label.replace("<EOC></s>","")
-            caption=caption[0].split("[ANSWER]")[1].strip()
-            label=label.split("[ANSWER]")[1]
+            caption=caption[0].split("[ANSWER]")[1].strip().lower()
+            label=label.split("[ANSWER]")[1].strip().lower()
 
             # print("--------------------- TARGET -----------------------")
             # print(target)
             # print("--------------------- CAPTION -----------------------")
-
             # print(caption)
             # print("--------------------- LABEL -----------------------")
             # print(label)

@@ -151,3 +151,4 @@ flamingo-train_task/training/flamingo-Bilbao/*
 flamingo-train_task/training/flamingo-megatiny-opt-v2-QA/*
 flamingo-train_task/training/flamingo-megatiny-opt-QA/*
 flamingo-train_task/training/VQAV2/*
+preprocessing/s2v_old/*
