@@ -152,3 +152,14 @@ flamingo-train_task/training/flamingo-megatiny-opt-v2-QA/*
 flamingo-train_task/training/flamingo-megatiny-opt-QA/*
 flamingo-train_task/training/VQAV2/*
 preprocessing/s2v_old/*
+
+
+beit-3/data/*
+beit-3/*/*.pth
+beit-3/beit3_base_indomain_patch16_224.pth
+beit-3/beit3_base_indomain_patch16_480_vqa.pth
+beit-3/checkpoint_best_mini.pth
+beit-3/beit3.spm
+beit-3/log*/*
+
+beit-3/save*/*
